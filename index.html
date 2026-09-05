@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whisky Collection Search</title>
+  <!-- Tailwind CSS for styling -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <!-- Full Fuse.js bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4 md:p-8">
+
+  <div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-bold text-amber-500 mb-1">🥃 Whisky Database</h1>
+        <p class="text-gray-400">Search by Name, Year, ABV, Score, or WB Code</p>
+      </div>
+      <div class="flex items-center gap-2 self-start md:self-auto">
+        <button id="syncBtn" class="bg-amber-600 hover:bg-amber-500 text-white font-medium px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition cursor-pointer">
+          🔄 Sync Data
+        </button>
+        <button id="configBtn" class="bg-gray-800 hover:bg-gray-700 text-amber-400 border border-amber-500/30 px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition cursor-pointer">
+          🔑 Config
+        </button>
+      </div>
+    </div>
+
+    <!-- Search Input Bar -->
+    <div class="relative mb-6">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Type to search (e.g. caol cask signatory 2022 40%)..."
+        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 pl-11 text-lg focus:outline-none focus:border-amber-500 transition"
+      />
+      <svg class="w-6 h-6 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+    </div>
+
+    <!-- Status / Count -->
+    <div id="statusText" class="text-sm text-gray-400 mb-4 px-1">Checking credentials...</div>
+
+    <!-- Results Table -->
+    <div class="overflow-x-auto bg-gray-800 rounded-lg shadow border border-gray-700">
+      <table class="w-full text-left text-sm text-gray-300">
+        <thead class="bg-gray-700 text-gray-200 uppercase text-xs">
+          <tr>
+            <th class="px-4 py-3">Name</th>
+            <th class="px-4 py-3">ABV</th>
+            <th class="px-4 py-3">Year</th>
+            <th class="px-4 py-3">Score</th>
+            <th class="px-4 py-3">WB Code</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody" class="divide-y divide-gray-700">
+          <tr>
+            <td colspan="5" class="px-4 py-6 text-center text-gray-500">Awaiting authentication...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY_DB_URL = 'whisky_tracker_db_url';
+    const STORAGE_KEY_ACCESS_CODE = 'whisky_tracker_access_code';
+    const STORAGE_KEY_CACHE = 'whisky_tracker_cache_data';
+    const STORAGE_KEY_LAST_SYNC = 'whisky_tracker_last_sync';
+
+    let rawData = [];
+    let fuse = null;
+
+    const searchInput = document.getElementById('searchInput');
+    const resultsBody = document.getElementById('resultsBody');
+    const statusText = document.getElementById('statusText');
+    const configBtn = document.getElementById('configBtn');
+    const syncBtn = document.getElementById('syncBtn');
+
+    function getStoredCredentials() {
+      let dbUrl = localStorage.getItem(STORAGE_KEY_DB_URL);
+      let accessCode = localStorage.getItem(STORAGE_KEY_ACCESS_CODE);
+
+      if (!dbUrl) {
+        dbUrl = prompt('Enter your Firebase Database Base URL:\n(e.g., https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com)');
+        if (dbUrl) {
+          dbUrl = dbUrl.trim().replace(/\/+$/, '');
+          localStorage.setItem(STORAGE_KEY_DB_URL, dbUrl);
+        }
+      }
+
+      if (!accessCode) {
+        accessCode = prompt('Enter your secret Access Code / Password:');
+        if (accessCode) {
+          accessCode = accessCode.trim();
+          localStorage.setItem(STORAGE_KEY_ACCESS_CODE, accessCode);
+        }
+      }
+
+      return { dbUrl, accessCode };
+    }
+
+    function getEndpointUrl() {
+      const { dbUrl, accessCode } = getStoredCredentials();
+      if (!dbUrl || !accessCode) return null;
+      return `${dbUrl}/trackers/${accessCode}.json`;
+    }
+
+    async function fetchFreshData() {
+      const endpoint = getEndpointUrl();
+
+      if (!endpoint) {
+        statusText.innerText = "Missing configuration. Click '🔑 Config' to set up your credentials.";
+        resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-amber-400">Configuration required to fetch data.</td></tr>`;
+        return;
+      }
+
+      statusText.innerText = "Fetching fresh whiskies from Firebase...";
+
+      try {
+        const response = await fetch(endpoint);
+
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("Unauthorized access. Please check your Access Code.");
+        }
+        if (!response.ok) {
+          throw new Error(`HTTP Error ${response.status}`);
+        }
+
+        const data = await response.json();
+        rawData = Array.isArray(data) ? data.filter(item => item && item.Name) : [];
+
+        // Save fresh data & timestamp in DD.MM.YY HH:mm format
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = String(now.getFullYear()).slice(-2);
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+
+        const nowFormatted = `${day}.${month}.${year} ${hours}:${minutes}`;
+
+        localStorage.setItem(STORAGE_KEY_CACHE, JSON.stringify(rawData));
+        localStorage.setItem(STORAGE_KEY_LAST_SYNC, nowFormatted);
+
+        initSearchAndUI(`Freshly synced from Firebase (${nowFormatted}).`);
+      } catch (err) {
+        console.error(err);
+        statusText.innerText = `Error: ${err.message}`;
+        resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-red-400">${err.message}</td></tr>`;
+      }
+    }
+
+    function loadData() {
+      const cached = localStorage.getItem(STORAGE_KEY_CACHE);
+      const lastSync = localStorage.getItem(STORAGE_KEY_LAST_SYNC);
+
+      if (cached) {
+        try {
+          rawData = JSON.parse(cached);
+          const syncInfo = lastSync ? ` (Last synced: ${lastSync})` : '';
+          initSearchAndUI(`Loaded from local cache.${syncInfo}`);
+          return;
+        } catch (e) {
+          console.error("Failed to parse local cache. Re-fetching...", e);
+        }
+      }
+
+      fetchFreshData();
+    }
+
+    function initSearchAndUI(sourceMessage) {
+      const searchableData = rawData.map(item => {
+        const cleanAbv = item.ABV !== undefined && item.ABV !== null
+          ? String(item.ABV).replace(/%/g, '').replace(',', '.').trim()
+          : '';
+
+        return {
+          ...item,
+          searchableABV: cleanAbv,
+          YearStr: item.Year ? String(item.Year) : '',
+          ScoreStr: item.Score ? String(item.Score) : '',
+          WBcodeStr: item.WBcode ? String(item.WBcode) : ''
+        };
+      });
+
+      fuse = new Fuse(searchableData, {
+        keys: [
+          { name: 'Name', weight: 0.5 },
+          { name: 'YearStr', weight: 0.2 },
+          { name: 'WBcodeStr', weight: 0.15 },
+          { name: 'searchableABV', weight: 0.1 },
+          { name: 'ScoreStr', weight: 0.05 }
+        ],
+        threshold: 0.3,
+        ignoreLocation: true,
+        useExtendedSearch: true
+      });
+
+      statusText.innerText = `${sourceMessage} Total: ${rawData.length} whiskies.`;
+
+      if (searchInput.value.trim()) {
+        searchInput.dispatchEvent(new Event('input'));
+      } else {
+        renderTable(rawData);
+      }
+    }
+
+    function formatAbv(val) {
+      if (val === undefined || val === null || val === '') return '-';
+      const normalizedStr = String(val).replace(/%/g, '').replace(',', '.');
+      const num = parseFloat(normalizedStr);
+      if (isNaN(num)) return escapeHtml(String(val));
+
+      const percentage = num <= 1 ? num * 100 : num;
+      return `${percentage.toFixed(1)}%`;
+    }
+
+    function renderTable(items) {
+      if (items.length === 0) {
+        resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">No whiskies found matching your query.</td></tr>`;
+        return;
+      }
+
+      resultsBody.innerHTML = items.map(item => {
+        const formattedYear = item.Year
+          ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
+          : '-';
+
+        return `
+          <tr class="hover:bg-gray-750 transition border-b border-gray-700/50">
+            <td class="px-4 py-3 font-medium text-amber-200">${escapeHtml(item.Name || '-')}</td>
+            <td class="px-4 py-3">${formatAbv(item.ABV)}</td>
+            <td class="px-4 py-3 whitespace-pre-line leading-snug">${formattedYear}</td>
+            <td class="px-4 py-3 font-semibold text-green-400">${escapeHtml(String(item.Score || '-'))}</td>
+            <td class="px-4 py-3 font-mono text-xs text-gray-400">${escapeHtml(String(item.WBcode || '-'))}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+
+      if (!query) {
+        renderTable(rawData);
+        statusText.innerText = `Showing all ${rawData.length} whiskies.`;
+        return;
+      }
+
+      if (!fuse) return;
+
+      const cleanQuery = query.replace(/%/g, '').replace(',', '.');
+      const tokens = cleanQuery.split(/\s+/).filter(t => t.length > 0);
+
+      if (tokens.length === 0) {
+        renderTable(rawData);
+        return;
+      }
+
+      const extendedQuery = {
+        $and: tokens.map(token => ({
+          $or: [
+            { Name: `'${token}` },
+            { YearStr: `'${token}` },
+            { WBcodeStr: `'${token}` },
+            { searchableABV: `'${token}` },
+            { ScoreStr: `'${token}` }
+          ]
+        }))
+      };
+
+      const results = fuse.search(extendedQuery);
+      const filteredData = results.map(res => res.item);
+
+      statusText.innerText = `Found ${filteredData.length} matching result(s).`;
+      renderTable(filteredData);
+    });
+
+    syncBtn.addEventListener('click', () => {
+      fetchFreshData();
+    });
+
+    configBtn.addEventListener('click', () => {
+      const currentUrl = localStorage.getItem(STORAGE_KEY_DB_URL) || '';
+      const currentCode = localStorage.getItem(STORAGE_KEY_ACCESS_CODE) || '';
+
+      const newUrl = prompt('Firebase Database URL:', currentUrl);
+      if (newUrl === null) return;
+
+      const newCode = prompt('Access Code / Password:', currentCode);
+      if (newCode === null) return;
+
+      if (newUrl.trim()) {
+        localStorage.setItem(STORAGE_KEY_DB_URL, newUrl.trim().replace(/\/+$/, ''));
+      }
+      if (newCode.trim()) {
+        localStorage.setItem(STORAGE_KEY_ACCESS_CODE, newCode.trim());
+      }
+
+      fetchFreshData();
+    });
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>'"]/g,
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
