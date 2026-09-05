@@ -20,11 +20,11 @@
         <p class="text-gray-400">Search by Name, Year, ABV, Score, or WB Code</p>
       </div>
       <div class="flex items-center gap-2 self-start md:self-auto">
-        <button id="syncBtn" class="bg-amber-600 hover:bg-amber-500 text-white font-medium px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition cursor-pointer">
+        <button id="syncBtn" class="bg-amber-600 hover:bg-amber-500 text-gray-900 font-medium px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition cursor-pointer">
           🔄 Sync Data
         </button>
         <button id="configBtn" class="bg-gray-800 hover:bg-gray-700 text-amber-400 border border-amber-500/30 px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition cursor-pointer">
-          ⚙️ Config
+          🔑  Config
         </button>
       </div>
     </div>
@@ -124,7 +124,7 @@
       const endpoint = getEndpointUrl();
 
       if (!endpoint) {
-        statusText.innerText = "Missing configuration. Click '⚙️ Config' to set up your credentials.";
+        statusText.innerText = "Missing configuration. Click '🔑 Config' to set up your credentials.";
         resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-amber-400">Configuration required to fetch data.</td></tr>`;
         return;
       }
