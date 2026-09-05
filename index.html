@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Whisky DB Search</title>
- <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥃</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥃</text></svg>">
   <!-- Tailwind CSS for styling -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <!-- Full Fuse.js bundle -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen p-4 md:p-8">
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4 md:p-8 font-sans">
 
   <div class="max-w-5xl mx-auto">
     <!-- Header -->
@@ -20,11 +20,11 @@
         <p class="text-gray-400">Search by Name, Year, ABV, Score, or WB Code</p>
       </div>
       <div class="flex items-center gap-2 self-start md:self-auto">
-        <button id="syncBtn" class="bg-amber-600 hover:bg-amber-500 text-gray-900 font-medium px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition cursor-pointer">
+        <button id="syncBtn" class="bg-amber-600 hover:bg-amber-500 text-white font-medium px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition cursor-pointer">
           🔄 Sync Data
         </button>
         <button id="configBtn" class="bg-gray-800 hover:bg-gray-700 text-amber-400 border border-amber-500/30 px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition cursor-pointer">
-          🔑 Config
+          ⚙️ Config
         </button>
       </div>
     </div>
@@ -54,10 +54,10 @@
     <!-- Status / Count -->
     <div id="statusText" class="text-sm text-gray-400 mb-4 px-1">Checking credentials...</div>
 
-    <!-- Results Table -->
+    <!-- Results Table / Mobile Cards -->
     <div class="overflow-x-auto bg-gray-800 rounded-lg shadow border border-gray-700">
       <table class="w-full text-left text-sm text-gray-300">
-        <thead class="bg-gray-700 text-gray-200 uppercase text-xs">
+        <thead class="hidden md:table-header-group bg-gray-700 text-gray-200 uppercase text-xs">
           <tr>
             <th class="px-4 py-3">Name</th>
             <th class="px-4 py-3">ABV</th>
@@ -124,7 +124,7 @@
       const endpoint = getEndpointUrl();
 
       if (!endpoint) {
-        statusText.innerText = "Missing configuration. Click '🔑 Config' to set up your credentials.";
+        statusText.innerText = "Missing configuration. Click '⚙️ Config' to set up your credentials.";
         resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-amber-400">Configuration required to fetch data.</td></tr>`;
         return;
       }
@@ -146,9 +146,9 @@
 
         // Save fresh data & timestamp in DD.MM.YY HH:mm format
         const now = new Date();
-        const day = String(now.getDate()).padStart(1, '0');
-        const month = String(now.getMonth() + 1).padStart(1, '0');
-        const year = String(now.getFullYear()).slice(-4);
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = String(now.getFullYear()).slice(-2);
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
 
@@ -242,12 +242,27 @@
           : '-';
 
         return `
-          <tr class="hover:bg-gray-750 transition border-b border-gray-700/50">
-            <td class="px-4 py-3 font-medium text-amber-300">${escapeHtml(item.Name || '-')}</td>
-            <td class="px-4 py-3">${formatAbv(item.ABV)}</td>
-            <td class="px-4 py-3 whitespace-pre-line leading-snug">${formattedYear}</td>
-            <td class="px-4 py-3 font-semibold text-green-400">${escapeHtml(String(item.Score || '-'))}</td>
-            <td class="px-4 py-3 font-mono text-xs text-gray-400">${escapeHtml(String(item.WBcode || '-'))}</td>
+          <tr class="block md:table-row hover:bg-gray-750 transition border-b border-gray-700/50 p-4 md:p-0">
+            <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 font-medium text-amber-300 mb-1 md:mb-0">
+              <span class="text-xs font-semibold uppercase text-gray-400 md:hidden">Name</span>
+              <span class="text-right md:text-left font-semibold md:font-medium text-base md:text-sm">${escapeHtml(item.Name || '-')}</span>
+            </td>
+            <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 text-gray-300">
+              <span class="text-xs font-semibold uppercase text-gray-400 md:hidden">ABV</span>
+              <span>${formatAbv(item.ABV)}</span>
+            </td>
+            <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 whitespace-pre-line leading-snug text-gray-300">
+              <span class="text-xs font-semibold uppercase text-gray-400 md:hidden">Year</span>
+              <span class="text-right md:text-left">${formattedYear}</span>
+            </td>
+            <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 font-semibold text-green-400">
+              <span class="text-xs font-semibold uppercase text-gray-400 md:hidden">Score</span>
+              <span>${escapeHtml(String(item.Score || '-'))}</span>
+            </td>
+            <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 font-mono text-xs text-gray-400">
+              <span class="text-xs font-semibold uppercase text-gray-400 md:hidden font-sans">WB Code</span>
+              <span>${escapeHtml(String(item.WBcode || '-'))}</span>
+            </td>
           </tr>
         `;
       }).join('');
