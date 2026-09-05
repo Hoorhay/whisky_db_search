@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Whisky Collection Search</title>
+  <title>Whisky DB Search</title>
+ <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥃</text></svg>">
   <!-- Tailwind CSS for styling -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <!-- Full Fuse.js bundle -->
@@ -15,7 +16,7 @@
     <!-- Header -->
     <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div>
-        <h1 class="text-3xl md:text-4xl font-bold text-amber-500 mb-1">🥃 Whisky Database</h1>
+        <h1 class="text-3xl md:text-4xl font-bold text-amber-500 mb-1">🥃 Whisky DB search</h1>
         <p class="text-gray-400">Search by Name, Year, ABV, Score, or WB Code</p>
       </div>
       <div class="flex items-center gap-2 self-start md:self-auto">
@@ -29,16 +30,25 @@
     </div>
 
     <!-- Search Input Bar -->
-    <div class="relative mb-6">
+    <div class="relative mb-6 flex items-center">
       <input
         type="text"
         id="searchInput"
-        placeholder="Type to search (e.g. caol cask signatory 2022 40%)..."
-        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 pl-11 text-lg focus:outline-none focus:border-amber-500 transition"
+        placeholder="Search (e.g. caol lady 2025 55,4)..."
+        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 pl-11 pr-10 text-lg focus:outline-none focus:border-amber-500 transition"
       />
-      <svg class="w-6 h-6 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-6 h-6 absolute left-3 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
       </svg>
+      <button
+        id="clearBtn"
+        class="hidden absolute right-3 text-gray-400 hover:text-white transition p-1 cursor-pointer"
+        aria-label="Clear search"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
     </div>
 
     <!-- Status / Count -->
@@ -75,6 +85,7 @@
     let fuse = null;
 
     const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearBtn');
     const resultsBody = document.getElementById('resultsBody');
     const statusText = document.getElementById('statusText');
     const configBtn = document.getElementById('configBtn');
@@ -113,7 +124,7 @@
       const endpoint = getEndpointUrl();
 
       if (!endpoint) {
-        statusText.innerText = "Missing configuration. Click '🔑 Config' to set up your credentials.";
+        statusText.innerText = "Missing configuration. Click '⚙️ Config' to set up your credentials.";
         resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-amber-400">Configuration required to fetch data.</td></tr>`;
         return;
       }
@@ -245,6 +256,12 @@
     searchInput.addEventListener('input', (e) => {
       const query = e.target.value.trim();
 
+      if (e.target.value.length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+
       if (!query) {
         renderTable(rawData);
         statusText.innerText = `Showing all ${rawData.length} whiskies.`;
@@ -278,6 +295,13 @@
 
       statusText.innerText = `Found ${filteredData.length} matching result(s).`;
       renderTable(filteredData);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.classList.add('hidden');
+      searchInput.focus();
+      searchInput.dispatchEvent(new Event('input'));
     });
 
     syncBtn.addEventListener('click', () => {
