@@ -180,7 +180,7 @@
       const endpoint = getEndpointUrl();
 
       if (!endpoint) {
-        statusText.innerText = "Missing configuration. Click '🔑 Config' to set up your credentials.";
+        statusText.innerText = "Missing configuration. Click '⚙️ Config' to set up your credentials.";
         resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-amber-400">Configuration required to fetch data.</td></tr>`;
         openModal();
         return;
@@ -276,6 +276,17 @@
       }
     }
 
+    function getAverageScore(items) {
+      const validScores = items
+        .map(item => parseFloat(String(item.Score).replace(',', '.')))
+        .filter(score => !isNaN(score));
+
+      if (validScores.length === 0) return null;
+
+      const total = validScores.reduce((sum, score) => sum + score, 0);
+      return Math.round(total / validScores.length);
+    }
+
     function formatAbv(val) {
       if (val === undefined || val === null || val === '') return '-';
       const normalizedStr = String(val).replace(/%/g, '').replace(',', '.');
@@ -364,7 +375,12 @@
       const results = fuse.search(extendedQuery);
       const filteredData = results.map(res => res.item);
 
-      statusText.innerText = `Found ${filteredData.length} matching result(s).`;
+      const avgScore = getAverageScore(filteredData);
+      const avgText = avgScore !== null
+        ? ` with average score of <span class="font-semibold text-green-400">${avgScore}</span>`
+        : '';
+
+      statusText.innerHTML = `Found ${filteredData.length} matching result(s)${avgText}.`;
       renderTable(filteredData);
     });
 
@@ -407,7 +423,6 @@
     });
   }
   </script>
-
 
 </body>
 </html>
