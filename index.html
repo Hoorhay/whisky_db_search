@@ -272,7 +272,7 @@ function openDetailModal(item) {
       const endpoint = getEndpointUrl();
 
       if (!endpoint) {
-        statusText.innerText = "Missing configuration. Click '⚙️ Config' to set up your credentials.";
+        statusText.innerText = "Missing configuration. Click '🔑 Config' to set up your credentials.";
         resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-amber-400">Configuration required to fetch data.</td></tr>`;
         openModal();
         return;
@@ -291,7 +291,17 @@ function openDetailModal(item) {
         }
 
         const data = await response.json();
-        rawData = Array.isArray(data) ? data.filter(item => item && item.Name) : [];
+
+        // If data is a chunked object (e.g. { "0-499": [...], "500-999": [...] }), flatten all chunks
+        if (data && !Array.isArray(data) && typeof data === 'object') {
+          rawData = Object.values(data)
+            .flat()
+            .filter(item => item && item.Name);
+        } else if (Array.isArray(data)) {
+          rawData = data.filter(item => item && item.Name);
+        } else {
+          rawData = [];
+        }
 
         const now = new Date();
         const day = String(now.getDate()).padStart(1, '0');
