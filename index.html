@@ -291,17 +291,7 @@ function openDetailModal(item) {
         }
 
         const data = await response.json();
-
-        // If data is a chunked object (e.g. { "0-499": [...], "500-999": [...] }), flatten all chunks
-        if (data && !Array.isArray(data) && typeof data === 'object') {
-          rawData = Object.values(data)
-            .flat()
-            .filter(item => item && item.Name);
-        } else if (Array.isArray(data)) {
-          rawData = data.filter(item => item && item.Name);
-        } else {
-          rawData = [];
-        }
+        rawData = Array.isArray(data) ? data.filter(item => item && item.Name) : [];
 
         const now = new Date();
         const day = String(now.getDate()).padStart(1, '0');
