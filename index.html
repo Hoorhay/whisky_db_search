@@ -84,6 +84,17 @@
     </div>
   </div>
 
+  <!-- Detail Card Modal -->
+  <div id="detailModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-gray-800 border border-gray-700 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4 relative">
+      <button id="detailCloseBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition cursor-pointer text-xl font-bold">&times;</button>
+
+      <div id="detailContent">
+        <!-- Content will be injected dynamically -->
+      </div>
+    </div>
+  </div>
+
   <!-- Custom Configuration Modal -->
   <div id="configModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
     <div class="bg-gray-800 border border-gray-700 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -132,6 +143,7 @@
     const STORAGE_KEY_LAST_SYNC = 'whisky_tracker_last_sync';
 
     let rawData = [];
+    let currentFilteredData = [];
     let fuse = null;
 
     const searchInput = document.getElementById('searchInput');
@@ -141,13 +153,18 @@
     const configBtn = document.getElementById('configBtn');
     const syncBtn = document.getElementById('syncBtn');
 
-    // Modal elements
+    // Config Modal elements
     const configModal = document.getElementById('configModal');
     const modalDbUrl = document.getElementById('modalDbUrl');
     const modalAccessCode = document.getElementById('modalAccessCode');
     const modalSaveBtn = document.getElementById('modalSaveBtn');
     const modalCancelBtn = document.getElementById('modalCancelBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+    // Detail Modal elements
+    const detailModal = document.getElementById('detailModal');
+    const detailContent = document.getElementById('detailContent');
+    const detailCloseBtn = document.getElementById('detailCloseBtn');
 
     function openModal() {
       modalDbUrl.value = localStorage.getItem(STORAGE_KEY_DB_URL) || '';
@@ -157,6 +174,75 @@
 
     function closeModal() {
       configModal.classList.add('hidden');
+    }
+
+function openDetailModal(item) {
+      const formattedYear = item.Year
+        ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
+        : '-';
+
+      const wbLink = item.WBcode
+        ? `<a href="https://www.whiskybase.com/whiskies/whisky/${escapeHtml(String(item.WBcode))}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-amber-400 hover:underline font-mono">
+            WB${escapeHtml(String(item.WBcode))} ↗
+           </a>`
+        : '-';
+
+      // Define standard keys to exclude from additional metadata
+      const excludedKeys = ['Name', 'ABV', 'Year', 'Score', 'WBcode', 'searchableABV', 'YearStr', 'ScoreStr', 'WBcodeStr', 'id'];
+
+      // Preferred order for specific metadata keys
+      const preferredOrder = ['Nose', 'Nosa', 'Taste', 'Finish'];
+
+      const metadataEntries = Object.entries(item)
+        .filter(([k]) => !excludedKeys.includes(k))
+        .sort(([a], [b]) => {
+          const indexA = preferredOrder.indexOf(a);
+          const indexB = preferredOrder.indexOf(b);
+
+          if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+          if (indexA !== -1) return -1;
+          if (indexB !== -1) return 1;
+          return a.localeCompare(b);
+        });
+
+      detailContent.innerHTML = `
+        <h2 class="text-2xl font-bold text-amber-500 pr-6 mb-4 leading-tight">${escapeHtml(item.Name || 'Unknown Whisky')}</h2>
+
+        <div class="grid grid-cols-2 gap-4 bg-gray-900/60 p-4 rounded-lg border border-gray-700/60 mb-4">
+
+          <div>
+            <span class="block text-xs uppercase text-gray-400 font-semibold mb-1">ABV</span>
+            <span class="text-2xl font-bold text-gray-200">${formatAbv(item.ABV)}</span>
+          </div>
+          <div>
+            <span class="block text-xs uppercase text-gray-400 font-semibold mb-1">WB Code</span>
+            <span class="text-2xl">${wbLink}</span>
+          </div>
+          <div>
+            <span class="block text-xs uppercase text-gray-400 font-semibold mb-1">Year</span>
+            <span class="text-base text-gray-300 font-medium whitespace-pre-line">${formattedYear}</span>
+          </div>
+          <div>
+            <span class="block text-xs uppercase text-gray-400 font-semibold mb-1">Score</span>
+            <span class="text-2xl font-bold text-green-400">${escapeHtml(String(item.Score || '-'))}</span>
+          </div>
+        </div>
+
+        ${metadataEntries.length > 0 ? `
+          <div class="border-t border-gray-700 pt-3 space-y-2">
+            <h3 class="text-s uppercase text-gray-400 font-semibold mb-2">Tasting Notes</h3>
+            ${metadataEntries
+              .map(([k, v]) => `<div class="flex justify-normal text-s py-1 border-b border-gray-800/50 last:border-0 gap-4"><span class="text-gray-400">${escapeHtml(k)}:</span><span class="text-gray-200 font-medium">${escapeHtml(String(v))}</span></div>`)
+              .join('')}
+          </div>
+        ` : ''}
+      `;
+
+      detailModal.classList.remove('hidden');
+    }
+
+    function closeDetailModal() {
+      detailModal.classList.add('hidden');
     }
 
     function saveCredentialsAndFetch() {
@@ -304,18 +390,19 @@
     }
 
     function renderTable(items) {
+      currentFilteredData = items;
       if (items.length === 0) {
         resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">No whiskies found matching your query.</td></tr>`;
         return;
       }
 
-      resultsBody.innerHTML = items.map(item => {
+      resultsBody.innerHTML = items.map((item, idx) => {
         const formattedYear = item.Year
           ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
           : '-';
 
         return `
-          <tr class="block md:table-row hover:bg-gray-750 transition border-b border-gray-700/50 p-4 md:p-0">
+          <tr data-index="${idx}" class="whisky-row block md:table-row hover:bg-gray-700/60 active:bg-gray-700 transition border-b border-gray-700/50 p-4 md:p-0 cursor-pointer">
             <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 font-medium text-amber-300 mb-1 md:mb-0">
               <span class="text-xs font-semibold uppercase text-gray-400 md:hidden">Name</span>
               <span class="text-right md:text-left font-semibold md:font-medium text-base md:text-sm">${escapeHtml(item.Name || '-')}</span>
@@ -340,6 +427,17 @@
         `;
       }).join('');
     }
+
+    // Row Click Event Delegation
+    resultsBody.addEventListener('click', (e) => {
+      const row = e.target.closest('.whisky-row');
+      if (row) {
+        const index = parseInt(row.getAttribute('data-index'), 10);
+        if (!isNaN(index) && currentFilteredData[index]) {
+          openDetailModal(currentFilteredData[index]);
+        }
+      }
+    });
 
     searchInput.addEventListener('input', (e) => {
       const query = e.target.value.trim();
@@ -406,9 +504,15 @@
     modalCancelBtn.addEventListener('click', closeModal);
     modalSaveBtn.addEventListener('click', saveCredentialsAndFetch);
 
-    // Close modal when tapping outside the dialog box
+    detailCloseBtn.addEventListener('click', closeDetailModal);
+
+    // Close modals when tapping outside the dialog boxes
     configModal.addEventListener('click', (e) => {
       if (e.target === configModal) closeModal();
+    });
+
+    detailModal.addEventListener('click', (e) => {
+      if (e.target === detailModal) closeDetailModal();
     });
 
     function escapeHtml(str) {
