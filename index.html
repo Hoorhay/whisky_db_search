@@ -8,128 +8,162 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-192x192.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <!-- Tailwind CSS for styling -->
+  <link rel="manifest" href="/whisky_db_search/manifest.json">
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <!-- Full Fuse.js bundle -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
 </head>
 
-<link rel="manifest" href="/whisky_db_search/manifest.json">
+<body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans selection:bg-amber-500/30 selection:text-amber-200 antialiased pb-20">
 
-<body class="bg-gray-900 text-gray-100 min-h-screen p-4 md:p-8 font-sans">
+  <!-- Subtle gradient background blur behind top content -->
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-amber-600/5 blur-[120px] pointer-events-none -z-10"></div>
 
-  <div class="max-w-5xl mx-auto">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10">
+    
     <!-- Header -->
-    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <div>
-        <h1 class="text-3xl md:text-4xl font-bold text-amber-500 mb-1 flex items-center gap-2">
-            <img src="assets/web-app-manifest-192x192.png" alt="Whisky DB" class="w-8 h-8 md:w-10 md:h-10 rounded">
-            Whisky DB search
-      </h1>
-        <p class="text-gray-400">Search by Name, Year, ABV, Score, or WB Code</p>
+    <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 border-b border-zinc-800/80 pb-6">
+      <div class="flex items-center gap-3.5">
+        <div class="relative">
+          <img src="assets/web-app-manifest-192x192.png" alt="Whisky DB" class="w-12 h-12 rounded-xl shadow-lg ring-1 ring-amber-500/20 object-cover">
+          <div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full ring-2 ring-zinc-950" title="Online"></div>
+        </div>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 tracking-tight">
+            Whisky DB
+          </h1>
+          <p class="text-xs sm:text-sm text-zinc-400 font-normal">Search by Name, Year, ABV, Score, or WB Code</p>
+        </div>
       </div>
-      <div class="flex items-center gap-2 self-start md:self-auto">
-        <button id="syncBtn" class="bg-amber-600 hover:bg-amber-500 text-gray-900 font-medium px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition cursor-pointer">
-          💾 Sync DB
-        </button>
-        <button id="configBtn" class="bg-gray-800 hover:bg-gray-700 text-amber-400 border border-amber-500/30 px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition cursor-pointer">
-          🔑 Config
-        </button>
-      </div>
-    </div>
 
-    <!-- Search Input Bar -->
-    <div class="relative mb-6 flex items-center">
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search (e.g. caol lady 2025 55,4)"
-        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-4 py-3 pl-11 pr-10 text-lg focus:outline-none focus:border-amber-500 transition"
-      />
-      <svg class="w-6 h-6 absolute left-3 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-      </svg>
-      <button
-        id="clearBtn"
-        class="hidden absolute right-3 text-gray-400 hover:text-white transition p-1 cursor-pointer"
-        aria-label="Clear search"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      <div class="flex items-center gap-2.5 self-start sm:self-auto">
+        <button id="syncBtn" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all active:scale-95 cursor-pointer shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          Sync DB
+        </button>
+        <button id="configBtn" class="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all active:scale-95 cursor-pointer shadow-sm">
+          <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          Config
+        </button>
+      </div>
+    </header>
+
+    <!-- Floating / Sticky Modern Search Input Bar -->
+    <div class="sticky top-4 z-30 mb-6">
+      <div class="relative flex items-center shadow-2xl rounded-2xl">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search whiskies... (e.g. Caol Ila 2025 55.4)"
+          class="w-full bg-zinc-900/80 backdrop-blur-xl border border-zinc-700/60 text-white rounded-2xl pl-12 pr-11 py-3.5 text-base sm:text-lg focus:outline-none focus:border-amber-500/60 focus:ring-4 focus:ring-amber-500/10 transition-all placeholder:text-zinc-500"
+        />
+        <svg class="w-5 h-5 absolute left-4 text-zinc-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
         </svg>
-      </button>
+        <button
+          id="clearBtn"
+          class="hidden absolute right-3.5 text-zinc-400 hover:text-white transition-colors p-1 cursor-pointer bg-zinc-800 rounded-lg"
+          aria-label="Clear search"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <!-- Status / Count -->
-    <div id="statusText" class="text-sm text-gray-400 mb-4 px-1">Checking credentials...</div>
+    <!-- Status Bar -->
+    <div class="flex items-center justify-between mb-4 px-1.5">
+      <div id="statusText" class="text-xs sm:text-sm text-zinc-400 font-medium">Checking credentials...</div>
+    </div>
 
-    <!-- Results Table / Mobile Cards -->
-    <div class="overflow-x-auto bg-gray-800 rounded-lg shadow border border-gray-700">
-      <table class="w-full text-left text-sm text-gray-300">
-        <thead class="hidden md:table-header-group bg-gray-700 text-gray-200 uppercase text-xs">
-          <tr>
-            <th class="px-4 py-3">Name</th>
-            <th class="px-4 py-3">ABV</th>
-            <th class="px-4 py-3">Year</th>
-            <th class="px-4 py-3">Score</th>
-            <th class="px-4 py-3">WB Code</th>
-          </tr>
-        </thead>
-        <tbody id="resultsBody" class="divide-y divide-gray-700">
-          <tr>
-            <td colspan="5" class="px-4 py-6 text-center text-gray-500">Awaiting authentication...</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Results: Responsive Container (Table on Desktop, Cards on Mobile) -->
+    <div class="bg-zinc-900/50 rounded-2xl shadow-xl border border-zinc-800 overflow-hidden backdrop-blur-md">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-zinc-300">
+          <thead class="hidden md:table-header-group bg-zinc-900/80 text-zinc-400 uppercase text-[11px] font-semibold tracking-wider border-b border-zinc-800">
+            <tr>
+              <th class="px-6 py-4">Name</th>
+              <th class="px-6 py-4">ABV</th>
+              <th class="px-6 py-4">Year</th>
+              <th class="px-6 py-4">Score</th>
+              <th class="px-6 py-4">WB Code</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody" class="divide-y divide-zinc-800/60">
+            <tr>
+              <td colspan="5" class="px-6 py-12 text-center text-zinc-500 font-medium">Awaiting authentication...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <!-- Detail Card Modal -->
-  <div id="detailModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-gray-800 border border-gray-700 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4 relative">
-      <button id="detailCloseBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition cursor-pointer text-xl font-bold">&times;</button>
+  <!-- Detail Modal -->
+  <div id="detailModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-all">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative transform transition-all scale-100">
+      <button id="detailCloseBtn" class="absolute top-4 right-4 text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-800 p-2 rounded-xl transition cursor-pointer">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
 
       <div id="detailContent">
-        <!-- Content will be injected dynamically -->
+        <!-- Dynamic Content -->
       </div>
     </div>
   </div>
 
-  <!-- Custom Configuration Modal -->
-  <div id="configModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-gray-800 border border-gray-700 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-gray-700 pb-3">
-        <h2 class="text-xl font-bold text-amber-500">🔑 Database Configuration</h2>
-        <button id="modalCloseBtn" class="text-gray-400 hover:text-white transition cursor-pointer text-lg">&times;</button>
+  <!-- Config Modal -->
+  <div id="configModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden transition-all">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+      <div class="flex justify-between items-center border-b border-zinc-800 pb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🔑</span>
+          <h2 class="text-lg font-bold text-white">Database Config</h2>
+        </div>
+        <button id="modalCloseBtn" class="text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-800 p-1.5 rounded-lg transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
       </div>
 
-      <div class="space-y-3">
+      <div class="space-y-4">
         <div>
-          <label for="modalDbUrl" class="block text-xs font-semibold text-gray-400 uppercase mb-1">Firebase Base URL</label>
+          <label for="modalDbUrl" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Firebase Base URL</label>
           <input
             type="url"
             id="modalDbUrl"
             placeholder="https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com"
-            class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg p-2.5 text-sm focus:outline-none focus:border-amber-500 transition"
+            class="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl p-3 text-sm focus:outline-none focus:border-amber-500 transition placeholder:text-zinc-600"
           />
         </div>
 
         <div>
-          <label for="modalAccessCode" class="block text-xs font-semibold text-gray-400 uppercase mb-1">Access Code / Tracker</label>
+          <label for="modalAccessCode" class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Access Code / Tracker</label>
           <input
             type="password"
             id="modalAccessCode"
             placeholder="Enter access code"
-            class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg p-2.5 text-sm focus:outline-none focus:border-amber-500 transition"
+            class="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl p-3 text-sm focus:outline-none focus:border-amber-500 transition placeholder:text-zinc-600"
           />
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 pt-2 border-t border-gray-700">
-        <button id="modalCancelBtn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-medium rounded-lg transition cursor-pointer">
+      <div class="flex justify-end gap-2.5 pt-3 border-t border-zinc-800">
+        <button id="modalCancelBtn" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold rounded-xl transition cursor-pointer">
           Cancel
         </button>
-        <button id="modalSaveBtn" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-gray-900 text-sm font-semibold rounded-lg transition cursor-pointer">
+        <button id="modalSaveBtn" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold rounded-xl transition cursor-pointer shadow-lg shadow-amber-500/10">
           Save & Sync
         </button>
       </div>
@@ -139,10 +173,10 @@
   <!-- Scroll to Top Button -->
   <button
     id="scrollToTopBtn"
-    class="fixed bottom-6 right-6 bg-amber-600 hover:bg-amber-500 text-gray-900 p-3 rounded-full shadow-lg transition-all duration-300 opacity-0 pointer-events-none z-40 cursor-pointer"
+    class="fixed bottom-6 right-6 bg-amber-500 hover:bg-amber-400 text-zinc-950 p-3.5 rounded-2xl shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-40 cursor-pointer active:scale-90"
     aria-label="Scroll to top"
   >
-    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
     </svg>
   </button>
@@ -207,10 +241,11 @@
 
       return codes.map(code => {
         const cleanCode = code.replace(/\D/g, '') || code; 
-        return `<a href="https://www.whiskybase.com/whiskies/whisky/${escapeHtml(cleanCode)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-amber-400 hover:underline font-mono">
-          WB${escapeHtml(code)} ↗
+        return `<a href="https://www.whiskybase.com/whiskies/whisky/${escapeHtml(cleanCode)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 px-2.5 py-1 rounded-md text-xs font-mono font-medium transition border border-amber-500/20">
+          WB${escapeHtml(code)}
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
         </a>`;
-      }).join('<br>');
+      }).join(' ');
     }
 
     // Helper to generate line-separated text for List/Table View
@@ -227,10 +262,10 @@
 
       const wbLink = formatWbLinks(item.WBcode);
 
-      // Define standard keys to exclude from additional metadata
+      // Standard keys to exclude from additional metadata
       const excludedKeys = ['Name', 'ABV', 'Year', 'Score', 'WBcode', 'searchableABV', 'YearStr', 'ScoreStr', 'WBcodeStr', 'id'];
 
-      // Preferred order for specific metadata keys
+      // Preferred order for tasting metadata
       const preferredOrder = ['Nose', 'Nosa', 'Taste', 'Finish'];
 
       const metadataEntries = Object.entries(item)
@@ -246,34 +281,39 @@
         });
 
       detailContent.innerHTML = `
-        <h2 class="text-2xl font-bold text-amber-500 pr-6 mb-4 leading-tight">${escapeHtml(item.Name || 'Unknown Whisky')}</h2>
+        <h2 class="text-xl font-bold text-amber-400 pr-8 leading-snug">${escapeHtml(item.Name || 'Unknown Whisky')}</h2>
 
-        <div class="grid grid-cols-2 gap-4 bg-gray-900/60 p-4 rounded-lg border border-gray-700/60 mb-4">
-
+        <div class="grid grid-cols-2 gap-3 bg-zinc-950/80 p-4 rounded-xl border border-zinc-800/80">
           <div>
-            <span class="block text-xs uppercase text-gray-400 font-semibold mb-1">ABV</span>
-            <span class="text-2xl font-bold text-gray-200">${formatAbv(item.ABV)}</span>
+            <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">ABV</span>
+            <span class="text-xl font-bold text-zinc-100">${formatAbv(item.ABV)}</span>
           </div>
           <div>
-            <span class="block text-xs uppercase text-gray-400 font-semibold mb-1">WB Code</span>
-            <span class="text-lg leading-tight">${wbLink}</span>
+            <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1.5">WB Link(s)</span>
+            <div class="flex flex-wrap gap-1.5">${wbLink}</div>
           </div>
           <div>
-            <span class="block text-xs uppercase text-gray-400 font-semibold mb-1">Year</span>
-            <span class="text-base text-gray-300 font-medium whitespace-pre-line">${formattedYear}</span>
+            <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Year</span>
+            <span class="text-sm text-zinc-300 font-medium whitespace-pre-line">${formattedYear}</span>
           </div>
           <div>
-            <span class="block text-xs uppercase text-gray-400 font-semibold mb-1">Score</span>
-            <span class="text-2xl font-bold text-green-400">${escapeHtml(String(item.Score || '-'))}</span>
+            <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Score</span>
+            <span class="text-xl font-bold text-emerald-400">${escapeHtml(String(item.Score || '-'))}</span>
           </div>
         </div>
 
         ${metadataEntries.length > 0 ? `
-          <div class="border-t border-gray-700 pt-3 space-y-2">
-            <h3 class="text-s uppercase text-gray-400 font-semibold mb-2">Tasting Notes</h3>
-            ${metadataEntries
-              .map(([k, v]) => `<div class="flex justify-normal text-s py-1 border-b border-gray-800/50 last:border-0 gap-4"><span class="text-gray-400">${escapeHtml(k)}:</span><span class="text-gray-200 font-medium">${escapeHtml(String(v))}</span></div>`)
-              .join('')}
+          <div class="border-t border-zinc-800/80 pt-3 space-y-2.5">
+            <h3 class="text-s uppercase tracking-wider text-zinc-400 font-bold">Details & Notes</h3>
+            <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+              ${metadataEntries
+                .map(([k, v]) => `
+                  <div class="text-xs bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-800/50">
+                    <span class="text-amber-500/80 font-medium block mb-0.5">${escapeHtml(k)}</span>
+                    <span class="text-zinc-300">${escapeHtml(String(v))}</span>
+                  </div>`)
+                .join('')}
+            </div>
           </div>
         ` : ''}
       `;
@@ -312,8 +352,8 @@
       const endpoint = getEndpointUrl();
 
       if (!endpoint) {
-        statusText.innerText = "Missing configuration. Click '🔑 Config' to set up your credentials.";
-        resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-amber-400">Configuration required to fetch data.</td></tr>`;
+        statusText.innerText = "Missing configuration. Click 'Config' to set up credentials.";
+        resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-amber-400 font-medium">Configuration required to fetch data.</td></tr>`;
         openModal();
         return;
       }
@@ -334,10 +374,10 @@
         rawData = Array.isArray(data) ? data.filter(item => item && item.Name) : [];
 
         const now = new Date();
-        const day = String(now.getDate()).padStart(1, '0');
-        const month = String(now.getMonth() + 1).padStart(1, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
         const year = String(now.getFullYear()).slice(-2);
-        const hours = String(now.getHours()).padStart(1, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
 
         const nowFormatted = `${hours}:${minutes}, ${day}.${month}.${year}`;
@@ -349,7 +389,7 @@
       } catch (err) {
         console.error(err);
         statusText.innerText = `Error: ${err.message}`;
-        resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-red-400">${err.message}</td></tr>`;
+        resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-red-400 font-medium">${err.message}</td></tr>`;
       }
     }
 
@@ -432,7 +472,7 @@
     function renderTable(items) {
       currentFilteredData = items;
       if (items.length === 0) {
-        resultsBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">No whiskies found matching your query.</td></tr>`;
+        resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-zinc-500 font-medium">No whiskies found matching your query.</td></tr>`;
         return;
       }
 
@@ -444,33 +484,48 @@
         const formattedWb = formatWbList(item.WBcode);
 
         return `
-          <tr data-index="${idx}" class="whisky-row block md:table-row hover:bg-gray-700/60 active:bg-gray-700 transition border-b border-gray-700/50 p-4 md:p-0 cursor-pointer">
-            <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 font-medium text-amber-300 mb-1 md:mb-0">
-              <span class="text-xs font-semibold uppercase text-gray-400 md:hidden">Name</span>
-              <span class="text-right md:text-left font-semibold md:font-medium text-base md:text-sm">${escapeHtml(item.Name || '-')}</span>
+          <tr data-index="${idx}" class="whisky-row block md:table-row hover:bg-zinc-800/40 active:bg-zinc-800/60 transition-colors cursor-pointer border-b border-zinc-800/60 last:border-none p-4 md:p-0">
+            <!-- Mobile View: Card Layout | Desktop View: Standard Cell -->
+            <td class="block md:table-cell md:px-6 md:py-4">
+              <div class="flex justify-between items-start md:block">
+                <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Name</span>
+                <span class="font-semibold text-amber-200 text-base md:text-sm text-right md:text-left hover:text-amber-300 transition-colors">${escapeHtml(item.Name || '-')}</span>
+              </div>
             </td>
-            <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 text-gray-300">
-              <span class="text-xs font-semibold uppercase text-gray-400 md:hidden">ABV</span>
-              <span>${formatAbv(item.ABV)}</span>
+            
+            <td class="block md:table-cell md:px-6 md:py-4 text-zinc-300">
+              <div class="flex justify-between items-center md:block">
+                <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">ABV</span>
+                <span class="font-medium">${formatAbv(item.ABV)}</span>
+              </div>
             </td>
-            <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 whitespace-pre-line leading-snug text-gray-300">
-              <span class="text-xs font-semibold uppercase text-gray-400 md:hidden">Year</span>
-              <span class="text-right md:text-left">${formattedYear}</span>
+            
+            <td class="block md:table-cell md:px-6 md:py-4 text-zinc-300">
+              <div class="flex justify-between items-center md:block">
+                <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Year</span>
+                <span class="whitespace-pre-line text-right md:text-left">${formattedYear}</span>
+              </div>
             </td>
-            <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 font-semibold text-green-400">
-              <span class="text-xs font-semibold uppercase text-gray-400 md:hidden">Score</span>
-              <span>${escapeHtml(String(item.Score || '-'))}</span>
+            
+            <td class="block md:table-cell md:px-6 md:py-4">
+              <div class="flex justify-between items-center md:block">
+                <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Score</span>
+                <span class="font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded text-xs inline-block">${escapeHtml(String(item.Score || '-'))}</span>
+              </div>
             </td>
-            <td class="flex justify-between items-center md:table-cell md:px-4 md:py-3 whitespace-pre-line leading-snug font-mono text-s text-gray-200">
-              <span class="text-xs font-semibold uppercase text-gray-400 md:hidden font-sans">WB Code</span>
-              <span class="text-right md:text-left">${formattedWb}</span>
+            
+            <td class="block md:table-cell md:px-6 md:py-4 text-zinc-400 font-mono text-xs">
+              <div class="flex justify-between items-center md:block">
+                <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 font-sans md:hidden">WB Code</span>
+                <span class="whitespace-pre-line text-right md:text-left">${formattedWb}</span>
+              </div>
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    // Row Click Event Delegation
+    // Event Delegation
     resultsBody.addEventListener('click', (e) => {
       const row = e.target.closest('.whisky-row');
       if (row) {
@@ -523,10 +578,10 @@
 
       const avgScore = getAverageScore(filteredData);
       const avgText = avgScore !== null
-        ? ` with average score of <span class="font-semibold text-green-400">${avgScore}</span>`
+        ? ` with avg score of <span class="font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">${avgScore}</span>`
         : '';
 
-      statusText.innerHTML = `Found ${filteredData.length} matching result(s)${avgText}.`;
+      statusText.innerHTML = `Found <span class="text-zinc-100 font-semibold">${filteredData.length}</span> matching result(s)${avgText}.`;
       renderTable(filteredData);
     });
 
@@ -548,7 +603,6 @@
 
     detailCloseBtn.addEventListener('click', closeDetailModal);
 
-    // Close modals when tapping outside the dialog boxes
     configModal.addEventListener('click', (e) => {
       if (e.target === configModal) closeModal();
     });
@@ -557,7 +611,6 @@
       if (e.target === detailModal) closeDetailModal();
     });
 
-    // Scroll to top button event listeners
     window.addEventListener('scroll', () => {
       if (window.scrollY > 300) {
         scrollToTopBtn.classList.remove('opacity-0', 'pointer-events-none');
