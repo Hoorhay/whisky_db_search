@@ -4,8 +4,8 @@
   "start_url": "/whisky_db_search/",
   "scope": "/whisky_db_search/",
   "display": "standalone",
-  "background_color": "#111827",
-  "theme_color": "#111827",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
   "icons": [
     {
       "src": "assets/favicon.svg",
