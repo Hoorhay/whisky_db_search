@@ -136,6 +136,17 @@
     </div>
   </div>
 
+  <!-- Scroll to Top Button -->
+  <button
+    id="scrollToTopBtn"
+    class="fixed bottom-6 right-6 bg-amber-600 hover:bg-amber-500 text-gray-900 p-3 rounded-full shadow-lg transition-all duration-300 opacity-0 pointer-events-none z-40 cursor-pointer"
+    aria-label="Scroll to top"
+  >
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+    </svg>
+  </button>
+
   <script>
     const STORAGE_KEY_DB_URL = 'whisky_tracker_db_url';
     const STORAGE_KEY_ACCESS_CODE = 'whisky_tracker_access_code';
@@ -165,6 +176,9 @@
     const detailModal = document.getElementById('detailModal');
     const detailContent = document.getElementById('detailContent');
     const detailCloseBtn = document.getElementById('detailCloseBtn');
+
+    // Scroll to Top Button element
+    const scrollToTopBtn = document.getElementById('scrollToTopBtn');
 
     function openModal() {
       modalDbUrl.value = localStorage.getItem(STORAGE_KEY_DB_URL) || '';
@@ -541,6 +555,24 @@
 
     detailModal.addEventListener('click', (e) => {
       if (e.target === detailModal) closeDetailModal();
+    });
+
+    // Scroll to top button event listeners
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) {
+        scrollToTopBtn.classList.remove('opacity-0', 'pointer-events-none');
+        scrollToTopBtn.classList.add('opacity-100');
+      } else {
+        scrollToTopBtn.classList.remove('opacity-100');
+        scrollToTopBtn.classList.add('opacity-0', 'pointer-events-none');
+      }
+    });
+
+    scrollToTopBtn.addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     });
 
     function escapeHtml(str) {
