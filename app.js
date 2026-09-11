@@ -74,10 +74,11 @@ function formatWbLinks(wbVal) {
   if (codes.length === 0) return '-';
 
   return codes.map(code => {
-    const cleanCode = code.replace(/\D/g, '') || code; 
-    return `<a href="https://www.whiskybase.com/whiskies/whisky/${escapeHtml(cleanCode)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 px-2.5 py-1 rounded-md text-xs font-mono font-medium transition border border-amber-500/20">
-      WB${escapeHtml(code)}
-      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+    const cleanCode = escapeHtml(code.replace(/\D/g, '') || code);
+    const displayCode = escapeHtml(code);
+    return `<a href="https://www.whiskybase.com/whiskies/whisky/${cleanCode}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 px-2.5 py-1 rounded-md text-xs font-mono font-medium transition border border-amber-500/20">
+    WB${displayCode}
+    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
     </a>`;
   }).join(' ');
 }
@@ -173,9 +174,12 @@ function getStoredCredentials() {
 }
 
 function getEndpointUrl() {
-  const { dbUrl, accessCode } = getStoredCredentials();
-  if (!dbUrl || !accessCode) return null;
-  return `${dbUrl}/trackers/${accessCode}.json`;
+  const { dbUrl, accessCode } = getStoredCredentials(); // cite: 4
+  if (!dbUrl || !accessCode) return null; // cite: 4
+
+  const baseUrl = dbUrl.replace(/\/+$/, '');
+
+  return `${baseUrl}/trackers/whiskies/${encodeURIComponent(accessCode)}.json`;
 }
 
 async function fetchFreshData() {
@@ -258,14 +262,15 @@ function initSearchAndUI(sourceMessage) {
 
   fuse = new Fuse(searchableData, {
     keys: [
-      { name: 'Name', weight: 0.5 },
-      { name: 'YearStr', weight: 0.2 },
+      { name: 'Name', weight: 0.45 },
+      { name: 'YearStr', weight: 0.25 },
+      { name: 'searchableABV', weight: 0.2 },
       { name: 'WBcodeStr', weight: 0.1 },
-      { name: 'searchableABV', weight: 0.15 },
-      { name: 'ScoreStr', weight: 0.05 }
     ],
-    threshold: 0.3,
-    ignoreLocation: true,
+    threshold: 0.3,           // Controls fuzziness (0.0 = exact match, 1.0 = match anything)
+    distance: 100,            // How close the match must be to the fuzzy location
+    minMatchCharLength: 2,    // Ignore 1-character typos to keep results clean
+    ignoreLocation: true,     // Finds matches anywhere in the string
     useExtendedSearch: true
   });
 
@@ -362,49 +367,50 @@ function handleSearch(queryVal) {
   const query = queryVal.trim();
 
   if (query.length > 0) {
-    clearBtn.classList.remove('hidden');
+    clearBtn.classList.remove('hidden'); // cite: 4
   } else {
-    clearBtn.classList.add('hidden');
+    clearBtn.classList.add('hidden'); // cite: 4
   }
 
   if (!query) {
-    renderTable(rawData);
-    statusText.innerText = `Showing all ${rawData.length} whiskies.`;
+    renderTable(rawData); // cite: 4
+    statusText.innerText = `Showing all ${rawData.length} whiskies.`; // cite: 4
     return;
   }
 
-  if (!fuse) return;
+  if (!fuse) return; // cite: 4
 
   const cleanQuery = query.replace(/%/g, '').replace(',', '.');
   const tokens = cleanQuery.split(/\s+/).filter(t => t.length > 0);
 
   if (tokens.length === 0) {
-    renderTable(rawData);
+    renderTable(rawData); // cite: 4
     return;
   }
 
+  // Pure multi-token fuzzy matching without forcing exact prefix checks
   const extendedQuery = {
     $and: tokens.map(token => ({
       $or: [
-        { Name: `'${token}` },
-        { YearStr: `'${token}` },
-        { WBcodeStr: `'${token}` },
-        { searchableABV: `'${token}` },
-        { ScoreStr: `'${token}` }
+        { Name: token },
+        { YearStr: token },
+        { WBcodeStr: token },
+        { searchableABV: token },
+        { ScoreStr: token }
       ]
     }))
   };
 
-  const results = fuse.search(extendedQuery);
-  const filteredData = results.map(res => res.item);
+  const results = fuse.search(extendedQuery); // cite: 4
+  const filteredData = results.map(res => res.item); // cite: 4
 
-  const avgScore = getAverageScore(filteredData);
+  const avgScore = getAverageScore(filteredData); // cite: 4
   const avgText = avgScore !== null
-    ? ` with avg score of <span class="font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">${escapeHtml(avgScore)}</span>`
-    : '';
+  ? ` with avg score of <span class="font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">${escapeHtml(avgScore)}</span>` // cite: 4
+  : '';
 
-  statusText.innerHTML = `Found <span class="text-zinc-100 font-semibold">${escapeHtml(filteredData.length)}</span> matching result(s)${avgText}.`;
-  renderTable(filteredData);
+  statusText.innerHTML = `Found <span class="text-zinc-100 font-semibold">${escapeHtml(filteredData.length)}</span> matching result(s)${avgText}.`; // cite: 4
+  renderTable(filteredData); // cite: 4
 }
 
 const debouncedSearch = debounce((e) => {

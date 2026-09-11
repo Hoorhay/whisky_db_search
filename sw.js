@@ -28,11 +28,22 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Improved fetch handling in sw.js
 self.addEventListener('fetch', (event) => {
-  // Pass Firebase network requests straight to the network
-  if (event.request.url.includes('firebaseio.com')) {
-    return;
-  }
+  if (event.request.url.includes('firebaseio.com')) return;
+
+  event.respondWith(
+    fetch(event.request)
+    .then((networkResponse) => {
+      if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+      }
+      return networkResponse;
+    })
+    .catch(() => caches.match(event.request))
+  );
+});
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
