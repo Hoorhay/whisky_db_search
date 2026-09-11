@@ -234,15 +234,17 @@ function loadData() {
   if (cached) {
     try {
       rawData = JSON.parse(cached);
-      const syncInfo = lastSync ? `Last sync: ${lastSync}` : '';
-      initSearchAndUI(`${syncInfo}`);
+      const syncInfo = lastSync ? `Cached data (${lastSync}).` : 'Loaded from cache.';
+      initSearchAndUI(syncInfo);
       return;
     } catch (e) {
-      console.error("Failed to parse local cache. Re-fetching...", e);
+      console.error("Failed to parse local cache:", e);
     }
   }
 
-  fetchFreshData();
+  // If local storage is empty or corrupt, prompt the user without automatically fetching
+  statusText.innerText = "No local cache found. Click 'Sync DB' or 'Config' to download data.";
+  resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-amber-400 font-medium">No cached data available. Tap Sync DB to load whiskies.</td></tr>`;
 }
 
 function initSearchAndUI(sourceMessage) {
