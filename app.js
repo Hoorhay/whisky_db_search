@@ -183,16 +183,23 @@ function getEndpointUrl() {
 }
 
 async function fetchFreshData() {
-  const endpoint = getEndpointUrl();
-
-  if (!endpoint) {
-    statusText.innerText = "Missing configuration. Click 'Config' to set up credentials.";
-    resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-amber-400 font-medium">Configuration required to fetch data.</td></tr>`;
-    openModal();
+  // 1. Guard check: Don't attempt fetch if device is offline
+  if (!navigator.onLine) {
+    statusText.innerText = "Offline. Displaying cached data.";
     return;
   }
 
-  statusText.innerText = "Fetching fresh whiskies from Firebase...";
+  const endpoint = getEndpointUrl(); // cite: 4
+
+  if (!endpoint) { // cite: 4
+    statusText.innerText = "Missing configuration. Click 'Config' to set up credentials."; // cite: 4
+    resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-amber-400 font-medium">Configuration required to fetch data.</td></tr>`; // cite: 4
+    openModal(); // cite: 4
+    return; // cite: 4
+  }
+
+  const previousStatus = statusText.innerText;
+  statusText.innerText = "Syncing with Firebase...";
 
   try {
     const response = await fetch(endpoint);
@@ -222,8 +229,18 @@ async function fetchFreshData() {
     initSearchAndUI(`Synced now (${nowFormatted}).`);
   } catch (err) {
     console.error(err);
-    statusText.innerText = `Error: ${err.message}`;
-    resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-red-400 font-medium">${escapeHtml(err.message)}</td></tr>`;
+
+    // 2. Handle network/fetch failures gracefully
+    if (err instanceof TypeError || !navigator.onLine) {
+      // Offline or network drop: keep cached results rendered
+      statusText.innerText = "Offline/Network error. Showing cached data.";
+    } else {
+      // Hard auth/HTTP error: notify status without clearing cached table if available
+      statusText.innerText = `Sync failed: ${err.message}`;
+      if (rawData.length === 0) {
+        resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-red-400 font-medium">${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
   }
 }
 
