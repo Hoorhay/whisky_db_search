@@ -199,7 +199,13 @@ async function fetchFreshData() {
   statusText.innerText = "Syncing with Firebase...";
 
   try {
-    const response = await fetch(endpoint);
+    const response = await fetch(endpoint, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    });
 
     if (response.status === 401 || response.status === 403) {
       throw new Error("Unauthorized access. Please check your Access Code.");
@@ -209,8 +215,11 @@ async function fetchFreshData() {
     }
 
     const data = await response.json();
-    const rawList = Array.isArray(data) ? data : Object.values(data || {});
-    rawData = rawList.filter(item => item && item.Name);
+    const rawList = Array.isArray(data)
+    ? data.flat(Infinity)
+    : Object.values(data || {});
+
+    rawData = rawList.filter(item => item && typeof item === 'object' && item.Name);
 
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
