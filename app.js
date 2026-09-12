@@ -34,7 +34,7 @@ const scrollToTopBtn = document.getElementById('scrollToTopBtn');
 function escapeHtml(str) {
   if (str === undefined || str === null) return '';
   return String(str).replace(/[&<>'"]/g,
-    tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+                             tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
   );
 }
 
@@ -63,10 +63,10 @@ function closeModal() {
 function parseWbCodes(wbVal) {
   if (wbVal === undefined || wbVal === null || wbVal === '') return [];
   return String(wbVal)
-    .replace(/\r\n|\r/g, '\n')
-    .split('\n')
-    .map(code => code.trim())
-    .filter(code => code.length > 0);
+  .replace(/\r\n|\r/g, '\n')
+  .split('\n')
+  .map(code => code.trim())
+  .filter(code => code.length > 0);
 }
 
 function formatWbLinks(wbVal) {
@@ -91,8 +91,8 @@ function formatWbList(wbVal) {
 
 function openDetailModal(item) {
   const formattedYear = item.Year
-    ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
-    : '-';
+  ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
+  : '-';
 
   const wbLink = formatWbLinks(item.WBcode);
 
@@ -100,56 +100,56 @@ function openDetailModal(item) {
   const preferredOrder = ['Nose', 'Nosa', 'Taste', 'Finish'];
 
   const metadataEntries = Object.entries(item)
-    .filter(([k]) => !excludedKeys.includes(k))
-    .sort(([a], [b]) => {
-      const indexA = preferredOrder.indexOf(a);
-      const indexB = preferredOrder.indexOf(b);
+  .filter(([k]) => !excludedKeys.includes(k))
+  .sort(([a], [b]) => {
+    const indexA = preferredOrder.indexOf(a);
+    const indexB = preferredOrder.indexOf(b);
 
-      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-      if (indexA !== -1) return -1;
-      if (indexB !== -1) return 1;
-      return a.localeCompare(b);
-    });
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    return a.localeCompare(b);
+  });
 
   detailContent.innerHTML = `
-    <h2 class="text-xl font-bold text-amber-400 pr-8 leading-snug">${escapeHtml(item.Name || 'Unknown Whisky')}</h2>
+  <h2 class="text-xl font-bold text-amber-400 pr-8 leading-snug">${escapeHtml(item.Name || 'Unknown Whisky')}</h2>
 
-    <div class="grid grid-cols-2 gap-3 bg-zinc-950/80 p-4 rounded-xl border border-zinc-800/80">
-      <div>
-        <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">ABV</span>
-        <span class="text-xl font-bold text-zinc-100">${formatAbv(item.ABV)}</span>
-      </div>
-      <div>
-        <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1.5">WB Link(s)</span>
-        <div class="flex flex-wrap gap-1.5">${wbLink}</div>
-      </div>
-      <div>
-        <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Year</span>
-        <span class="text-sm text-zinc-300 font-medium whitespace-pre-line">${formattedYear}</span>
-      </div>
-      <div>
-        <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Score</span>
-        <span class="text-xl font-bold text-emerald-400">${escapeHtml(String(item.Score || item.AvgScore || '-'))}</span>
-      </div>
-    </div>
+  <div class="grid grid-cols-2 gap-3 bg-zinc-950/80 p-4 rounded-xl border border-zinc-800/80">
+  <div>
+  <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">ABV</span>
+  <span class="text-xl font-bold text-zinc-100">${formatAbv(item.ABV)}</span>
+  </div>
+  <div>
+  <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1.5">WB Link(s)</span>
+  <div class="flex flex-wrap gap-1.5">${wbLink}</div>
+  </div>
+  <div>
+  <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Year</span>
+  <span class="text-sm text-zinc-300 font-medium whitespace-pre-line">${formattedYear}</span>
+  </div>
+  <div>
+  <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Score</span>
+  <span class="text-xl font-bold text-emerald-400">${escapeHtml(String(item.Score || item.AvgScore || '-'))}</span>
+  </div>
+  </div>
 
-    ${metadataEntries.length > 0 ? `
-      <div class="border-t border-zinc-800/80 pt-3 space-y-2.5">
-        <h3 class="text-s uppercase tracking-wider text-zinc-400 font-bold">Details & Notes</h3>
-        <div class="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-          ${metadataEntries
-            .map(([k, v]) => `
-              <div class="text-xs bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-800/50">
-                <span class="text-amber-500/80 font-medium block mb-0.5">${escapeHtml(k)}</span>
-                <span class="text-zinc-300">${escapeHtml(String(v))}</span>
-              </div>`)
-            .join('')}
-        </div>
+  ${metadataEntries.length > 0 ? `
+    <div class="border-t border-zinc-800/80 pt-3 space-y-2.5">
+    <h3 class="text-s uppercase tracking-wider text-zinc-400 font-bold">Details & Notes</h3>
+    <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+    ${metadataEntries
+      .map(([k, v]) => `
+      <div class="text-xs bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-800/50">
+      <span class="text-amber-500/80 font-medium block mb-0.5">${escapeHtml(k)}</span>
+      <span class="text-zinc-300">${escapeHtml(String(v))}</span>
+      </div>`)
+      .join('')}
       </div>
-    ` : ''}
-  `;
+      </div>
+      ` : ''}
+      `;
 
-  detailModal.classList.remove('hidden');
+      detailModal.classList.remove('hidden');
 }
 
 function closeDetailModal() {
@@ -209,7 +209,8 @@ async function fetchFreshData() {
     }
 
     const data = await response.json();
-    rawData = Array.isArray(data) ? data.filter(item => item && item.Name) : [];
+    const rawList = Array.isArray(data) ? data : Object.values(data || {});
+    rawData = rawList.filter(item => item && item.Name);
 
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
@@ -259,15 +260,15 @@ function loadData() {
 function initSearchAndUI(sourceMessage) {
   const searchableData = rawData.map(item => {
     const cleanAbv = item.ABV !== undefined && item.ABV !== null
-      ? String(item.ABV).replace(/%/g, '').replace(',', '.').trim()
-      : '';
+    ? String(item.ABV).replace(/%/g, '').replace(',', '.').trim()
+    : '';
 
     return {
       ...item,
       searchableABV: cleanAbv,
       YearStr: item.Year ? String(item.Year) : '',
-      ScoreStr: item.Score || item.AvgScore ? String(item.Score || item.AvgScore) : '',
-      WBcodeStr: item.WBcode ? String(item.WBcode) : ''
+                                     ScoreStr: item.Score || item.AvgScore ? String(item.Score || item.AvgScore) : '',
+                                     WBcodeStr: item.WBcode ? String(item.WBcode) : ''
     };
   });
 
@@ -290,18 +291,17 @@ function initSearchAndUI(sourceMessage) {
   if (searchInput.value.trim()) {
     handleSearch(searchInput.value);
   } else {
-    currentSearchTokens = [];
     renderTable(rawData);
   }
 }
 
 function getAverageScore(items) {
   const validScores = items
-    .map(item => {
-      const scoreVal = item.Score !== undefined && item.Score !== null ? item.Score : item.AvgScore;
-      return parseFloat(String(scoreVal || '').replace(',', '.'));
-    })
-    .filter(score => !isNaN(score));
+  .map(item => {
+    const scoreVal = item.Score !== undefined && item.Score !== null ? item.Score : item.AvgScore;
+    return parseFloat(String(scoreVal || '').replace(',', '.'));
+  })
+  .filter(score => !isNaN(score));
 
   if (validScores.length === 0) return null;
 
@@ -319,17 +319,16 @@ function formatAbv(val) {
   return `${percentage.toFixed(1)}%`;
 }
 
-// Issue 2 Fix: DocumentFragment rendering for smooth performance
 function renderTable(items) {
   currentFilteredData = items;
-  resultsBody.textContent = ''; // Fast clean reset
+  resultsBody.textContent = '';
 
   if (items.length === 0) {
     const emptyRow = document.createElement('tr');
     emptyRow.innerHTML = `
-      <td colspan="5" class="px-6 py-12 text-center text-zinc-500 font-medium">
-        No whiskies found matching your query.
-      </td>`;
+    <td colspan="5" class="px-6 py-12 text-center text-zinc-500 font-medium">
+    No whiskies found matching your query.
+    </td>`;
     resultsBody.appendChild(emptyRow);
     return;
   }
@@ -338,56 +337,54 @@ function renderTable(items) {
 
   items.forEach((item, idx) => {
     const formattedYear = item.Year
-      ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
-      : '-';
+    ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
+    : '-';
 
     const formattedWb = formatWbList(item.WBcode);
     const displayScore = item.Score !== undefined && item.Score !== null ? item.Score : item.AvgScore;
-    
-    // Highlight matched search tokens in the name
     const displayName = escapeHtml(item.Name || '-');
 
     const tr = document.createElement('tr');
     tr.setAttribute('data-index', idx);
     tr.className = "whisky-row block md:table-row hover:bg-zinc-800/40 active:bg-zinc-800/60 transition-colors cursor-pointer border-b border-zinc-800/60 last:border-none p-4 md:p-0";
-    
+
     tr.innerHTML = `
-      <td class="block md:table-cell md:px-6 md:py-4">
-        <div class="flex justify-between items-start md:block">
-          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Name</span>
-          <span class="font-semibold text-amber-200 text-base md:text-sm text-right md:text-left hover:text-amber-300 transition-colors">${displayName}</span>
-        </div>
-      </td>
-      
-      <td class="block md:table-cell md:px-6 md:py-4 text-zinc-300">
-        <div class="flex justify-between items-center md:block">
-          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">ABV</span>
-          <span class="font-medium">${formatAbv(item.ABV)}</span>
-        </div>
-      </td>
-      
-      <td class="block md:table-cell md:px-6 md:py-4 text-zinc-300">
-        <div class="flex justify-between items-center md:block">
-          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Year</span>
-          <span class="whitespace-pre-line text-right md:text-left">${formattedYear}</span>
-        </div>
-      </td>
-      
-      <td class="block md:table-cell md:px-6 md:py-4">
-        <div class="flex justify-between items-center md:block">
-          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Score</span>
-          <span class="font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded text-xs inline-block">${escapeHtml(String(displayScore || '-'))}</span>
-        </div>
-      </td>
-      
-      <td class="block md:table-cell md:px-6 md:py-4 text-zinc-400 font-mono text-xs">
-        <div class="flex justify-between items-center md:block">
-          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 font-sans md:hidden">WB Code</span>
-          <span class="whitespace-pre-line text-right md:text-left">${formattedWb}</span>
-        </div>
-      </td>
+    <td class="block md:table-cell md:px-6 md:py-4">
+    <div class="flex justify-between items-start md:block">
+    <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Name</span>
+    <span class="font-semibold text-amber-200 text-base md:text-sm text-right md:text-left hover:text-amber-300 transition-colors">${displayName}</span>
+    </div>
+    </td>
+
+    <td class="block md:table-cell md:px-6 md:py-4 text-zinc-300">
+    <div class="flex justify-between items-center md:block">
+    <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">ABV</span>
+    <span class="font-medium">${formatAbv(item.ABV)}</span>
+    </div>
+    </td>
+
+    <td class="block md:table-cell md:px-6 md:py-4 text-zinc-300">
+    <div class="flex justify-between items-center md:block">
+    <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Year</span>
+    <span class="whitespace-pre-line text-right md:text-left">${formattedYear}</span>
+    </div>
+    </td>
+
+    <td class="block md:table-cell md:px-6 md:py-4">
+    <div class="flex justify-between items-center md:block">
+    <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Score</span>
+    <span class="font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded text-xs inline-block">${escapeHtml(String(displayScore || '-'))}</span>
+    </div>
+    </td>
+
+    <td class="block md:table-cell md:px-6 md:py-4 text-zinc-400 font-mono text-xs">
+    <div class="flex justify-between items-center md:block">
+    <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 font-sans md:hidden">WB Code</span>
+    <span class="whitespace-pre-line text-right md:text-left">${formattedWb}</span>
+    </div>
+    </td>
     `;
-    
+
     fragment.appendChild(tr);
   });
 
@@ -404,7 +401,6 @@ function handleSearch(queryVal) {
   }
 
   if (!query) {
-    currentSearchTokens = [];
     renderTable(rawData); // cite: 1
     statusText.innerText = `Showing all ${rawData.length} whiskies.`; // cite: 1
     return;
@@ -414,7 +410,6 @@ function handleSearch(queryVal) {
 
   const cleanQuery = query.replace(/%/g, '').replace(',', '.');
   const tokens = cleanQuery.split(/\s+/).filter(t => t.length > 0);
-  currentSearchTokens = tokens;
 
   if (tokens.length === 0) {
     renderTable(rawData); // cite: 1
@@ -438,14 +433,13 @@ function handleSearch(queryVal) {
 
   const avgScore = getAverageScore(filteredData); // cite: 1
   const avgText = avgScore !== null
-    ? ` with avg score of <span class="font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">${escapeHtml(avgScore)}</span>` // cite: 1
-    : '';
+  ? ` with avg score of <span class="font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">${escapeHtml(avgScore)}</span>` // cite: 1
+  : '';
 
   statusText.innerHTML = `Found <span class="text-zinc-100 font-semibold">${escapeHtml(filteredData.length)}</span> matching result(s)${avgText}.`; // cite: 1
   renderTable(filteredData); // cite: 1
 }
 
-// Issue 4 Fix: Optimized search debounce timing
 const debouncedSearch = debounce((e) => {
   handleSearch(e.target.value);
 }, 150);
@@ -512,8 +506,8 @@ scrollToTopBtn.addEventListener('click', () => {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registered!'))
-      .catch(err => console.error('Service Worker registration failed:', err));
+    .then(reg => console.log('Service Worker registered!'))
+    .catch(err => console.error('Service Worker registration failed:', err));
   });
 }
 

@@ -1,11 +1,12 @@
-const CACHE_NAME = 'whisky-db-v2';
+const CACHE_NAME = 'whisky-db-v3';
 const ASSETS_TO_CACHE = [
   './',
-  './index.html',
-  './style.css',
-  './app.js',
-  './manifest.json',
-  'https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js'
+'./index.html',
+'./style.css',
+'./app.js',
+'./manifest.json',
+'./assets/favicon.svg',
+'https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -20,8 +21,8 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        .filter((name) => name !== CACHE_NAME)
+        .map((name) => caches.delete(name))
       );
     })
   );
@@ -32,14 +33,17 @@ self.addEventListener('fetch', (event) => {
   // Let Firebase requests pass through directly to network
   if (event.request.url.includes('firebaseio.com')) return;
 
-  // Cache First, falling back to network for static resources
+  // Cache First, falling back to network for all resources (including cors/opaque font assets)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
       return fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        if (
+          networkResponse &&
+          (networkResponse.status === 200 || networkResponse.type === 'opaque')
+        ) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
         }
