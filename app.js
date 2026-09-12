@@ -306,7 +306,7 @@ function getAverageScore(items) {
   if (validScores.length === 0) return null;
 
   const total = validScores.reduce((sum, score) => sum + score, 0);
-  return Math.round(total / validScores.length);
+  return (total / validScores.length).toFixed(1);
 }
 
 function formatAbv(val) {
