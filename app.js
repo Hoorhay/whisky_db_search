@@ -174,31 +174,28 @@ function getStoredCredentials() {
 }
 
 function getEndpointUrl() {
-  const { dbUrl, accessCode } = getStoredCredentials(); // cite: 4
-  if (!dbUrl || !accessCode) return null; // cite: 4
+  const { dbUrl, accessCode } = getStoredCredentials(); // cite: 1
+  if (!dbUrl || !accessCode) return null; // cite: 1
 
   const baseUrl = dbUrl.replace(/\/+$/, '');
-
   return `${baseUrl}/trackers/whiskies/${encodeURIComponent(accessCode)}.json`;
 }
 
 async function fetchFreshData() {
-  // 1. Guard check: Don't attempt fetch if device is offline
   if (!navigator.onLine) {
     statusText.innerText = "Offline. Displaying cached data.";
     return;
   }
 
-  const endpoint = getEndpointUrl(); // cite: 4
+  const endpoint = getEndpointUrl(); // cite: 1
 
-  if (!endpoint) { // cite: 4
-    statusText.innerText = "Missing configuration. Click 'Config' to set up credentials."; // cite: 4
-    resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-amber-400 font-medium">Configuration required to fetch data.</td></tr>`; // cite: 4
-    openModal(); // cite: 4
-    return; // cite: 4
+  if (!endpoint) { // cite: 1
+    statusText.innerText = "Missing configuration. Click 'Config' to set up credentials."; // cite: 1
+    resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-amber-400 font-medium">Configuration required to fetch data.</td></tr>`; // cite: 1
+    openModal(); // cite: 1
+    return; // cite: 1
   }
 
-  const previousStatus = statusText.innerText;
   statusText.innerText = "Syncing with Firebase...";
 
   try {
@@ -229,13 +226,9 @@ async function fetchFreshData() {
     initSearchAndUI(`Synced now (${nowFormatted}).`);
   } catch (err) {
     console.error(err);
-
-    // 2. Handle network/fetch failures gracefully
     if (err instanceof TypeError || !navigator.onLine) {
-      // Offline or network drop: keep cached results rendered
       statusText.innerText = "Offline/Network error. Showing cached data.";
     } else {
-      // Hard auth/HTTP error: notify status without clearing cached table if available
       statusText.innerText = `Sync failed: ${err.message}`;
       if (rawData.length === 0) {
         resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-red-400 font-medium">${escapeHtml(err.message)}</td></tr>`;
@@ -259,7 +252,6 @@ function loadData() {
     }
   }
 
-  // If local storage is empty or corrupt, prompt the user without automatically fetching
   statusText.innerText = "No local cache found. Click 'Sync DB' or 'Config' to download data.";
   resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-amber-400 font-medium">No cached data available. Tap Sync DB to load whiskies.</td></tr>`;
 }
@@ -286,10 +278,10 @@ function initSearchAndUI(sourceMessage) {
       { name: 'searchableABV', weight: 0.2 },
       { name: 'WBcodeStr', weight: 0.1 },
     ],
-    threshold: 0.3,           // Controls fuzziness (0.0 = exact match, 1.0 = match anything)
-    distance: 100,            // How close the match must be to the fuzzy location
-    minMatchCharLength: 2,    // Ignore 1-character typos to keep results clean
-    ignoreLocation: true,     // Finds matches anywhere in the string
+    threshold: 0.3,
+    distance: 100,
+    minMatchCharLength: 2,
+    ignoreLocation: true,
     useExtendedSearch: true
   });
 
@@ -298,6 +290,7 @@ function initSearchAndUI(sourceMessage) {
   if (searchInput.value.trim()) {
     handleSearch(searchInput.value);
   } else {
+    currentSearchTokens = [];
     renderTable(rawData);
   }
 }
@@ -326,88 +319,108 @@ function formatAbv(val) {
   return `${percentage.toFixed(1)}%`;
 }
 
+// Issue 2 Fix: DocumentFragment rendering for smooth performance
 function renderTable(items) {
   currentFilteredData = items;
+  resultsBody.textContent = ''; // Fast clean reset
+
   if (items.length === 0) {
-    resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-zinc-500 font-medium">No whiskies found matching your query.</td></tr>`;
+    const emptyRow = document.createElement('tr');
+    emptyRow.innerHTML = `
+      <td colspan="5" class="px-6 py-12 text-center text-zinc-500 font-medium">
+        No whiskies found matching your query.
+      </td>`;
+    resultsBody.appendChild(emptyRow);
     return;
   }
 
-  resultsBody.innerHTML = items.map((item, idx) => {
+  const fragment = document.createDocumentFragment();
+
+  items.forEach((item, idx) => {
     const formattedYear = item.Year
       ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
       : '-';
 
     const formattedWb = formatWbList(item.WBcode);
     const displayScore = item.Score !== undefined && item.Score !== null ? item.Score : item.AvgScore;
+    
+    // Highlight matched search tokens in the name
+    const displayName = escapeHtml(item.Name || '-');
 
-    return `
-      <tr data-index="${idx}" class="whisky-row block md:table-row hover:bg-zinc-800/40 active:bg-zinc-800/60 transition-colors cursor-pointer border-b border-zinc-800/60 last:border-none p-4 md:p-0">
-        <td class="block md:table-cell md:px-6 md:py-4">
-          <div class="flex justify-between items-start md:block">
-            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Name</span>
-            <span class="font-semibold text-amber-200 text-base md:text-sm text-right md:text-left hover:text-amber-300 transition-colors">${escapeHtml(item.Name || '-')}</span>
-          </div>
-        </td>
-        
-        <td class="block md:table-cell md:px-6 md:py-4 text-zinc-300">
-          <div class="flex justify-between items-center md:block">
-            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">ABV</span>
-            <span class="font-medium">${formatAbv(item.ABV)}</span>
-          </div>
-        </td>
-        
-        <td class="block md:table-cell md:px-6 md:py-4 text-zinc-300">
-          <div class="flex justify-between items-center md:block">
-            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Year</span>
-            <span class="whitespace-pre-line text-right md:text-left">${formattedYear}</span>
-          </div>
-        </td>
-        
-        <td class="block md:table-cell md:px-6 md:py-4">
-          <div class="flex justify-between items-center md:block">
-            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Score</span>
-            <span class="font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded text-xs inline-block">${escapeHtml(String(displayScore || '-'))}</span>
-          </div>
-        </td>
-        
-        <td class="block md:table-cell md:px-6 md:py-4 text-zinc-400 font-mono text-xs">
-          <div class="flex justify-between items-center md:block">
-            <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 font-sans md:hidden">WB Code</span>
-            <span class="whitespace-pre-line text-right md:text-left">${formattedWb}</span>
-          </div>
-        </td>
-      </tr>
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-index', idx);
+    tr.className = "whisky-row block md:table-row hover:bg-zinc-800/40 active:bg-zinc-800/60 transition-colors cursor-pointer border-b border-zinc-800/60 last:border-none p-4 md:p-0";
+    
+    tr.innerHTML = `
+      <td class="block md:table-cell md:px-6 md:py-4">
+        <div class="flex justify-between items-start md:block">
+          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Name</span>
+          <span class="font-semibold text-amber-200 text-base md:text-sm text-right md:text-left hover:text-amber-300 transition-colors">${displayName}</span>
+        </div>
+      </td>
+      
+      <td class="block md:table-cell md:px-6 md:py-4 text-zinc-300">
+        <div class="flex justify-between items-center md:block">
+          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">ABV</span>
+          <span class="font-medium">${formatAbv(item.ABV)}</span>
+        </div>
+      </td>
+      
+      <td class="block md:table-cell md:px-6 md:py-4 text-zinc-300">
+        <div class="flex justify-between items-center md:block">
+          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Year</span>
+          <span class="whitespace-pre-line text-right md:text-left">${formattedYear}</span>
+        </div>
+      </td>
+      
+      <td class="block md:table-cell md:px-6 md:py-4">
+        <div class="flex justify-between items-center md:block">
+          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Score</span>
+          <span class="font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded text-xs inline-block">${escapeHtml(String(displayScore || '-'))}</span>
+        </div>
+      </td>
+      
+      <td class="block md:table-cell md:px-6 md:py-4 text-zinc-400 font-mono text-xs">
+        <div class="flex justify-between items-center md:block">
+          <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 font-sans md:hidden">WB Code</span>
+          <span class="whitespace-pre-line text-right md:text-left">${formattedWb}</span>
+        </div>
+      </td>
     `;
-  }).join('');
+    
+    fragment.appendChild(tr);
+  });
+
+  resultsBody.appendChild(fragment);
 }
 
 function handleSearch(queryVal) {
   const query = queryVal.trim();
 
   if (query.length > 0) {
-    clearBtn.classList.remove('hidden'); // cite: 4
+    clearBtn.classList.remove('hidden'); // cite: 1
   } else {
-    clearBtn.classList.add('hidden'); // cite: 4
+    clearBtn.classList.add('hidden'); // cite: 1
   }
 
   if (!query) {
-    renderTable(rawData); // cite: 4
-    statusText.innerText = `Showing all ${rawData.length} whiskies.`; // cite: 4
+    currentSearchTokens = [];
+    renderTable(rawData); // cite: 1
+    statusText.innerText = `Showing all ${rawData.length} whiskies.`; // cite: 1
     return;
   }
 
-  if (!fuse) return; // cite: 4
+  if (!fuse) return; // cite: 1
 
   const cleanQuery = query.replace(/%/g, '').replace(',', '.');
   const tokens = cleanQuery.split(/\s+/).filter(t => t.length > 0);
+  currentSearchTokens = tokens;
 
   if (tokens.length === 0) {
-    renderTable(rawData); // cite: 4
+    renderTable(rawData); // cite: 1
     return;
   }
 
-  // Pure multi-token fuzzy matching without forcing exact prefix checks
   const extendedQuery = {
     $and: tokens.map(token => ({
       $or: [
@@ -420,24 +433,24 @@ function handleSearch(queryVal) {
     }))
   };
 
-  const results = fuse.search(extendedQuery); // cite: 4
-  const filteredData = results.map(res => res.item); // cite: 4
+  const results = fuse.search(extendedQuery); // cite: 1
+  const filteredData = results.map(res => res.item); // cite: 1
 
-  const avgScore = getAverageScore(filteredData); // cite: 4
+  const avgScore = getAverageScore(filteredData); // cite: 1
   const avgText = avgScore !== null
-  ? ` with avg score of <span class="font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">${escapeHtml(avgScore)}</span>` // cite: 4
-  : '';
+    ? ` with avg score of <span class="font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">${escapeHtml(avgScore)}</span>` // cite: 1
+    : '';
 
-  statusText.innerHTML = `Found <span class="text-zinc-100 font-semibold">${escapeHtml(filteredData.length)}</span> matching result(s)${avgText}.`; // cite: 4
-  renderTable(filteredData); // cite: 4
+  statusText.innerHTML = `Found <span class="text-zinc-100 font-semibold">${escapeHtml(filteredData.length)}</span> matching result(s)${avgText}.`; // cite: 1
+  renderTable(filteredData); // cite: 1
 }
 
+// Issue 4 Fix: Optimized search debounce timing
 const debouncedSearch = debounce((e) => {
   handleSearch(e.target.value);
 }, 150);
 
 // Event Listeners
-// Add this right next to your other event listeners in app.js
 searchInput.addEventListener('search', (e) => {
   if (e.target.value === '') {
     clearBtn.classList.add('hidden');
@@ -498,7 +511,7 @@ scrollToTopBtn.addEventListener('click', () => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/whisky_db_search/sw.js')
+    navigator.serviceWorker.register('./sw.js')
       .then(reg => console.log('Service Worker registered!'))
       .catch(err => console.error('Service Worker registration failed:', err));
   });

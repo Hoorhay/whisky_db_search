@@ -1,9 +1,11 @@
-const CACHE_NAME = 'whisky-db-v1';
+const CACHE_NAME = 'whisky-db-v2';
 const ASSETS_TO_CACHE = [
-  '/whisky_db_search/',
-'/whisky_db_search/index.html',
-'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4',
-'https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js'
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.json',
+  'https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -18,8 +20,8 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-        .filter((name) => name !== CACHE_NAME)
-        .map((name) => caches.delete(name))
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
       );
     })
   );
