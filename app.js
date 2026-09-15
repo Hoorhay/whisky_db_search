@@ -74,7 +74,14 @@ function formatWbLinks(wbVal) {
   if (codes.length === 0) return '-';
 
   return codes.map(code => {
-    const cleanCode = escapeHtml(code.replace(/\D/g, '') || code);
+    const trimmed = code.trim();
+    const cleanCode = code.replace(/\D/g, '');
+
+    // If the code is N/A or contains no digits, display plain text instead of a link
+    if (!cleanCode || /^n\/?a$/i.test(trimmed)) {
+      return `<span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-zinc-800 text-zinc-400 border border-zinc-700/50">${escapeHtml(trimmed)}</span>`;
+    }
+
     const displayCode = escapeHtml(code);
     return `<a href="https://www.whiskybase.com/whiskies/whisky/${cleanCode}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 px-2.5 py-1 rounded-md text-xs font-mono font-medium transition border border-amber-500/20">
     WB${displayCode}
