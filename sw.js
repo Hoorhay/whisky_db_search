@@ -1,14 +1,17 @@
-const CACHE_NAME = 'whisky-tracker-v1';
+const CACHE_NAME = 'whisky-tracker-v3';
 
-// Relative paths allow this to work regardless of repository name or domain subfolder
+// Relative paths allow this to work regardless of repository name or domain subfolder.
+// Everything here is now same-origin (Fuse.js is vendored locally instead of pulled
+// from a CDN, and the Google Fonts dependency was dropped in favor of system fonts),
+// so a plain cache.addAll() is safe: no cross-origin/opaque-response handling needed.
 const ASSETS_TO_CACHE = [
   './',
-'./index.html',
-'./app.js',
-'./manifest.json',
-// Include icons/stylesheets using relative paths below:
-'./icon-192.png',
-'./icon-512.png'
+  './index.html',
+  './app.js',
+  './style.css',
+  './fuse.min.js',
+  './manifest.json',
+  './assets/favicon.svg'
 ];
 
 // Install Event: Cache core application shell assets
