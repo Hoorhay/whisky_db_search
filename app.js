@@ -222,11 +222,21 @@ async function fetchFreshData() {
     }
 
     const data = await response.json();
+    if (!data || data.error) {
+      throw new Error(data && typeof data.error === 'string' ? data.error : 'Failed to fetch data from database');
+    }
+
     const rawList = Array.isArray(data)
     ? data.flat(Infinity)
     : Object.values(data || {});
 
-    rawData = rawList.filter(item => item && typeof item === 'object' && item.Name);
+    const freshData = rawList.filter(item => item && typeof item === 'object' && item.Name);
+
+    if (freshData.length === 0) {
+      throw new Error(rawData.length > 0 ? "Received empty whisky list from database; keeping cached data." : "No whisky records found in database.");
+    }
+
+    rawData = freshData;
 
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
@@ -243,8 +253,27 @@ async function fetchFreshData() {
     initSearchAndUI(`Synced now (${nowFormatted}).`);
   } catch (err) {
     console.error(err);
-    if (err instanceof TypeError || !navigator.onLine) {
-      statusText.innerText = "Offline/Network error. Showing cached data.";
+    const isOffline = !navigator.onLine || err instanceof TypeError || (err.message && (err.message.includes('Offline') || err.message.includes('503')));
+
+    if (rawData.length === 0) {
+      const cached = localStorage.getItem(STORAGE_KEY_CACHE);
+      const lastSync = localStorage.getItem(STORAGE_KEY_LAST_SYNC);
+      if (cached) {
+        try {
+          rawData = JSON.parse(cached);
+          const syncInfo = lastSync ? `Cached data (${lastSync}).` : 'Loaded from cache.';
+          initSearchAndUI(isOffline ? `Offline. ${syncInfo}` : `Sync failed (${err.message}). ${syncInfo}`);
+          return;
+        } catch (e) {
+          console.error("Failed to restore cached data:", e);
+        }
+      }
+    }
+
+    if (isOffline) {
+      statusText.innerText = rawData.length > 0
+        ? "Offline/Network error. Showing cached data."
+        : "Offline. No cached data available.";
     } else {
       statusText.innerText = `Sync failed: ${err.message}`;
       if (rawData.length === 0) {
@@ -407,6 +436,14 @@ function renderTable(items) {
   resultsBody.appendChild(fragment);
 }
 
+function escapeExtendedSearchToken(token) {
+  // Strip double quotes and pipe operators that would alter search grouping/logic,
+  // then wrap in quotes so Fuse ExtendedSearch treats ', !, ^, $, =, etc. as literal
+  // fuzzy search characters instead of extended search operators.
+  const sanitized = token.replace(/["|]/g, '').trim();
+  return sanitized ? `"${sanitized}"` : '';
+}
+
 function handleSearch(queryVal) {
   const query = queryVal.trim();
 
@@ -432,8 +469,16 @@ function handleSearch(queryVal) {
     return;
   }
 
+  const escapedTokens = tokens.map(escapeExtendedSearchToken).filter(t => t.length > 0);
+
+  if (escapedTokens.length === 0) {
+    renderTable(rawData);
+    statusText.innerText = `Showing all ${rawData.length} whiskies.`;
+    return;
+  }
+
   const extendedQuery = {
-    $and: tokens.map(token => ({
+    $and: escapedTokens.map(token => ({
       $or: [
         { Name: token },
         { YearStr: token },
@@ -517,6 +562,22 @@ scrollToTopBtn.addEventListener('click', () => {
     top: 0,
     behavior: 'smooth'
   });
+});
+
+window.addEventListener('online', () => {
+  if (rawData.length === 0) {
+    fetchFreshData();
+    return;
+  }
+  const lastSync = localStorage.getItem(STORAGE_KEY_LAST_SYNC);
+  const syncInfo = lastSync ? ` (Last synced: ${lastSync}).` : '';
+  statusText.innerText = `Online.${syncInfo} Total: ${rawData.length} whiskies.`;
+});
+
+window.addEventListener('offline', () => {
+  statusText.innerText = rawData.length > 0
+    ? "Offline. Displaying cached data."
+    : "Offline. No cached data available.";
 });
 
 if ('serviceWorker' in navigator) {
