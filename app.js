@@ -1,7 +1,14 @@
 const STORAGE_KEY_DB_URL = 'whisky_tracker_db_url';
 const STORAGE_KEY_ACCESS_CODE = 'whisky_tracker_access_code';
-const STORAGE_KEY_CACHE = 'whisky_tracker_cache_data';
-const STORAGE_KEY_LAST_SYNC = 'whisky_tracker_last_sync';
+// Legacy localStorage cache keys: read once for migration, and used as a fallback if IndexedDB is unavailable
+const LEGACY_KEY_CACHE = 'whisky_tracker_cache_data';
+const LEGACY_KEY_LAST_SYNC = 'whisky_tracker_last_sync';
+
+const IDB_NAME = 'whisky_db_search';
+const IDB_VERSION = 1;
+const IDB_STORE = 'cache';
+const IDB_RECORD_KEY = 'whiskies';
+const FETCH_TIMEOUT_MS = 10000;
 
 let rawData = [];
 let currentFilteredData = [];
@@ -29,6 +36,94 @@ const detailCloseBtn = document.getElementById('detailCloseBtn');
 
 // Scroll to Top Button element
 const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+
+// --- IndexedDB cache ---
+let dbPromise = null;
+
+function openDb() {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('IndexedDB unavailable'));
+      return;
+    }
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  }).catch(err => {
+    dbPromise = null; // allow a retry on the next call
+    throw err;
+  });
+  return dbPromise;
+}
+
+async function idbGet(key) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbPut(key, value) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
+  });
+}
+
+// Data and last-sync time are stored as one record, so they can never get out of step.
+async function saveCache(data, lastSync) {
+  try {
+    await idbPut(IDB_RECORD_KEY, { data, lastSync });
+    try {
+      localStorage.removeItem(LEGACY_KEY_CACHE);
+      localStorage.removeItem(LEGACY_KEY_LAST_SYNC);
+    } catch (e) { /* ignore */ }
+    return;
+  } catch (err) {
+    console.warn('IndexedDB save failed, falling back to localStorage:', err);
+  }
+  try {
+    localStorage.setItem(LEGACY_KEY_CACHE, JSON.stringify(data));
+    localStorage.setItem(LEGACY_KEY_LAST_SYNC, lastSync);
+  } catch (err) {
+    console.warn('Could not cache data locally:', err);
+  }
+}
+
+// Returns { data, lastSync } or null. Never throws.
+async function loadCache() {
+  try {
+    const rec = await idbGet(IDB_RECORD_KEY);
+    if (rec && Array.isArray(rec.data) && rec.data.length > 0) return rec;
+  } catch (err) {
+    console.warn('IndexedDB read failed:', err);
+  }
+
+  // Legacy localStorage cache (pre-IndexedDB installs, or IndexedDB unavailable)
+  try {
+    const cached = localStorage.getItem(LEGACY_KEY_CACHE);
+    if (cached) {
+      const data = JSON.parse(cached);
+      if (Array.isArray(data) && data.length > 0) {
+        const rec = { data, lastSync: localStorage.getItem(LEGACY_KEY_LAST_SYNC) };
+        await saveCache(rec.data, rec.lastSync); // migrate; clears legacy keys on success
+        return rec;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to read legacy cache:', err);
+  }
+  return null;
+}
+// --- end IndexedDB cache ---
 
 // Utility Functions
 function escapeHtml(str) {
@@ -205,13 +300,14 @@ async function fetchFreshData() {
 
   statusText.innerText = "Syncing with Firebase...";
 
+  // Abort hung requests (dead Wi-Fi / captive portal report navigator.onLine === true)
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
   try {
     const response = await fetch(endpoint, {
       cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-      }
+      signal: controller.signal
     });
 
     if (response.status === 401 || response.status === 403) {
@@ -247,26 +343,21 @@ async function fetchFreshData() {
 
     const nowFormatted = `${hours}:${minutes}, ${day}.${month}.${year}`;
 
-    localStorage.setItem(STORAGE_KEY_CACHE, JSON.stringify(rawData));
-    localStorage.setItem(STORAGE_KEY_LAST_SYNC, nowFormatted);
-
     initSearchAndUI(`Synced now (${nowFormatted}).`);
+
+    // saveCache never throws, so a storage failure can't turn a successful sync into an error
+    await saveCache(rawData, nowFormatted);
   } catch (err) {
     console.error(err);
-    const isOffline = !navigator.onLine || err instanceof TypeError || (err.message && (err.message.includes('Offline') || err.message.includes('503')));
+    const isOffline = !navigator.onLine || err.name === 'AbortError' || err instanceof TypeError || (err.message && (err.message.includes('Offline') || err.message.includes('503')));
 
     if (rawData.length === 0) {
-      const cached = localStorage.getItem(STORAGE_KEY_CACHE);
-      const lastSync = localStorage.getItem(STORAGE_KEY_LAST_SYNC);
-      if (cached) {
-        try {
-          rawData = JSON.parse(cached);
-          const syncInfo = lastSync ? `Cached data (${lastSync}).` : 'Loaded from cache.';
-          initSearchAndUI(isOffline ? `Offline. ${syncInfo}` : `Sync failed (${err.message}). ${syncInfo}`);
-          return;
-        } catch (e) {
-          console.error("Failed to restore cached data:", e);
-        }
+      const rec = await loadCache();
+      if (rec) {
+        rawData = rec.data;
+        const syncInfo = rec.lastSync ? `Cached data (${rec.lastSync}).` : 'Loaded from cache.';
+        initSearchAndUI(isOffline ? `Offline. ${syncInfo}` : `Sync failed (${err.message}). ${syncInfo}`);
+        return;
       }
     }
 
@@ -280,22 +371,19 @@ async function fetchFreshData() {
         resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-red-400 font-medium">${escapeHtml(err.message)}</td></tr>`;
       }
     }
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-function loadData() {
-  const cached = localStorage.getItem(STORAGE_KEY_CACHE);
-  const lastSync = localStorage.getItem(STORAGE_KEY_LAST_SYNC);
+async function loadData() {
+  const rec = await loadCache();
 
-  if (cached) {
-    try {
-      rawData = JSON.parse(cached);
-      const syncInfo = lastSync ? `Cached data (${lastSync}).` : 'Loaded from cache.';
-      initSearchAndUI(syncInfo);
-      return;
-    } catch (e) {
-      console.error("Failed to parse local cache:", e);
-    }
+  if (rec) {
+    rawData = rec.data;
+    const syncInfo = rec.lastSync ? `Cached data (${rec.lastSync}).` : 'Loaded from cache.';
+    initSearchAndUI(syncInfo);
+    return;
   }
 
   statusText.innerText = "No local cache found. Click 'Sync DB' or 'Config' to download data.";
@@ -564,15 +652,12 @@ scrollToTopBtn.addEventListener('click', () => {
   });
 });
 
-window.addEventListener('online', () => {
-  if (rawData.length === 0) {
-    fetchFreshData();
-    return;
-  }
-  const lastSync = localStorage.getItem(STORAGE_KEY_LAST_SYNC);
-  const syncInfo = lastSync ? ` (Last synced: ${lastSync}).` : '';
-  statusText.innerText = `Online.${syncInfo} Total: ${rawData.length} whiskies.`;
-});
+// Sync quietly, but only when credentials exist (fetchFreshData opens the config modal otherwise)
+function backgroundSync() {
+  if (navigator.onLine && getEndpointUrl()) fetchFreshData();
+}
+
+window.addEventListener('online', backgroundSync);
 
 window.addEventListener('offline', () => {
   statusText.innerText = rawData.length > 0
@@ -588,4 +673,10 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-loadData();
+// Ask the browser not to evict the cached data under storage pressure (best effort)
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().catch(() => {});
+}
+
+// Show cached data first, then refresh in the background
+loadData().catch(console.error).then(backgroundSync);
