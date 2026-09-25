@@ -525,11 +525,19 @@ function renderTable(items) {
 }
 
 function escapeExtendedSearchToken(token) {
-  // Strip double quotes and pipe operators that would alter search grouping/logic,
-  // then wrap in quotes so Fuse ExtendedSearch treats ', !, ^, $, =, etc. as literal
-  // fuzzy search characters instead of extended search operators.
+  // Strip double quotes and pipe operators that would alter search grouping/logic.
   const sanitized = token.replace(/["|]/g, '').trim();
-  return sanitized ? `"${sanitized}"` : '';
+  if (!sanitized) return '';
+
+  // Support '=' prefix as an explicit exact-match operator in Fuse ExtendedSearch (e.g. =55.4 or =50)
+  if (sanitized.startsWith('=')) {
+    const value = sanitized.slice(1).trim();
+    return value ? `="${value}"` : '';
+  }
+
+  // Wrap standard tokens in quotes so characters like ', !, ^, $ are treated as
+  // literal fuzzy search characters instead of extended search operators.
+  return `"${sanitized}"`;
 }
 
 function handleSearch(queryVal) {

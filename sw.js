@@ -1,6 +1,6 @@
 // sw.js
 // Bump CACHE_NAME whenever you deploy changes to any cached file.
-const CACHE_NAME = 'whisky-db-v3';
+const CACHE_NAME = 'whisky-db-v4';
 
 // Without these the app can't run at all, so install fails if any are missing.
 const CORE_ASSETS = [
