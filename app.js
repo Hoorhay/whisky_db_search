@@ -628,7 +628,8 @@ function renderTable(items) {
     ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
     : '-';
 
-    const formattedWb = formatWbList(item.WBcode);
+    // Use formatWbLinks instead of formatWbList
+    const wbLinks = formatWbLinks(item.WBcode);
     const displayScore = item.Score !== undefined && item.Score !== null ? item.Score : item.AvgScore;
     const displayName = escapeHtml(item.Name || '-');
 
@@ -667,8 +668,8 @@ function renderTable(items) {
 
     <td class="block md:table-cell md:px-6 md:py-4 text-zinc-400 font-mono text-xs">
     <div class="flex justify-between items-center md:block">
-    <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 font-sans md:hidden">WB Code</span>
-    <span class="whitespace-pre-line text-right md:text-left">${formattedWb}</span>
+    <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:font-sans md:hidden">WB Code</span>
+    <div class="flex flex-wrap gap-1.5 justify-end md:justify-start">${wbLinks}</div>
     </div>
     </td>
     `;
@@ -771,6 +772,11 @@ searchInput.addEventListener('search', (e) => {
 });
 
 resultsBody.addEventListener('click', (e) => {
+  // If the user clicked directly on or inside an anchor link, let the browser follow the link
+  if (e.target.closest('a')) {
+    return;
+  }
+
   const row = e.target.closest('.whisky-row');
   if (row) {
     const index = parseInt(row.getAttribute('data-index'), 10);
