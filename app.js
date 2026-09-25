@@ -11,7 +11,9 @@ const IDB_RECORD_KEY = 'whiskies';
 const FETCH_TIMEOUT_MS = 10000;
 
 let rawData = [];
+let currentBaseData = [];
 let currentFilteredData = [];
+let currentSort = { column: null, direction: null };
 let fuse = null;
 
 const searchInput = document.getElementById('searchInput');
@@ -424,7 +426,160 @@ function initSearchAndUI(sourceMessage) {
   if (searchInput.value.trim()) {
     handleSearch(searchInput.value);
   } else {
-    renderTable(rawData);
+    currentBaseData = rawData;
+    renderTable(getSortedData(currentBaseData));
+  }
+}
+
+function parseAbvNumber(val) {
+  if (val === undefined || val === null || val === '') return null;
+  const normalizedStr = String(val).replace(/%/g, '').replace(',', '.').trim();
+  const num = parseFloat(normalizedStr);
+  if (isNaN(num)) return null;
+  return num <= 1 ? num * 100 : num;
+}
+
+function parseYearNumber(val) {
+  if (val === undefined || val === null || val === '') return null;
+  const match = String(val).match(/\d{4}/);
+  if (match) return parseInt(match[0], 10);
+  const num = parseInt(String(val), 10);
+  return isNaN(num) ? null : num;
+}
+
+function parseScoreNumber(item) {
+  const scoreVal = item.Score !== undefined && item.Score !== null && item.Score !== ''
+    ? item.Score
+    : (item.AvgScore !== undefined && item.AvgScore !== null && item.AvgScore !== '' ? item.AvgScore : null);
+  if (scoreVal === null) return null;
+  const num = parseFloat(String(scoreVal).replace(',', '.').trim());
+  return isNaN(num) ? null : num;
+}
+
+function parseWbNumber(val) {
+  const codes = parseWbCodes(val);
+  if (codes.length === 0) return null;
+  const num = parseInt(codes[0].replace(/\D/g, ''), 10);
+  return isNaN(num) ? null : num;
+}
+
+function sortItems(items, column, direction) {
+  const sorted = [...items];
+  sorted.sort((a, b) => {
+    let diff = 0;
+    if (column === 'Name') {
+      const nameA = String(a.Name || '').trim();
+      const nameB = String(b.Name || '').trim();
+      diff = direction === 'asc'
+        ? nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
+        : nameB.localeCompare(nameA, undefined, { sensitivity: 'base', numeric: true });
+    } else if (column === 'ABV') {
+      const numA = parseAbvNumber(a.ABV);
+      const numB = parseAbvNumber(b.ABV);
+      if (numA === null && numB === null) diff = 0;
+      else if (numA === null) return 1;
+      else if (numB === null) return -1;
+      else diff = direction === 'asc' ? numA - numB : numB - numA;
+    } else if (column === 'Year') {
+      const yrA = parseYearNumber(a.Year);
+      const yrB = parseYearNumber(b.Year);
+      if (yrA === null && yrB === null) diff = 0;
+      else if (yrA === null) return 1;
+      else if (yrB === null) return -1;
+      else diff = direction === 'asc' ? yrA - yrB : yrB - yrA;
+    } else if (column === 'Score') {
+      const scA = parseScoreNumber(a);
+      const scB = parseScoreNumber(b);
+      if (scA === null && scB === null) diff = 0;
+      else if (scA === null) return 1;
+      else if (scB === null) return -1;
+      else diff = direction === 'asc' ? scA - scB : scB - scA;
+    } else if (column === 'WBcode') {
+      const wbA = parseWbNumber(a.WBcode);
+      const wbB = parseWbNumber(b.WBcode);
+      if (wbA === null && wbB === null) diff = 0;
+      else if (wbA === null) return 1;
+      else if (wbB === null) return -1;
+      else diff = direction === 'asc' ? wbA - wbB : wbB - wbA;
+    }
+
+    if (diff !== 0) return diff;
+    const tieA = String(a.Name || '').trim();
+    const tieB = String(b.Name || '').trim();
+    return tieA.localeCompare(tieB, undefined, { sensitivity: 'base', numeric: true });
+  });
+  return sorted;
+}
+
+function getSortedData(items) {
+  if (!currentSort.column || !currentSort.direction) {
+    return items;
+  }
+  return sortItems(items, currentSort.column, currentSort.direction);
+}
+
+function updateSortIndicators() {
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    const col = th.getAttribute('data-sort');
+    const indicator = th.querySelector('[data-sort-indicator]');
+    if (!indicator) return;
+
+    if (currentSort.column === col && currentSort.direction) {
+      if (currentSort.direction === 'asc') {
+        indicator.textContent = '▲';
+        th.setAttribute('aria-sort', 'ascending');
+      } else {
+        indicator.textContent = '▼';
+        th.setAttribute('aria-sort', 'descending');
+      }
+      indicator.className = 'sort-indicator text-xs font-mono text-amber-400 font-bold ml-1 inline-block';
+      th.classList.add('text-amber-300');
+      th.classList.remove('text-zinc-400');
+    } else {
+      indicator.textContent = '';
+      indicator.className = 'sort-indicator text-xs font-mono text-zinc-600 transition-colors ml-1 inline-block';
+      th.setAttribute('aria-sort', 'none');
+      th.classList.remove('text-amber-300');
+      th.classList.add('text-zinc-400');
+    }
+  });
+
+  const mobileSortSelect = document.getElementById('mobileSortSelect');
+  if (mobileSortSelect) {
+    mobileSortSelect.value = (currentSort.column && currentSort.direction)
+      ? `${currentSort.column}-${currentSort.direction}`
+      : '';
+  }
+}
+
+function setSort(column) {
+  if (currentSort.column === column) {
+    const isDefaultDesc = (column === 'Score' || column === 'ABV' || column === 'Year');
+    if (isDefaultDesc) {
+      if (currentSort.direction === 'desc') {
+        currentSort.direction = 'asc';
+      } else if (currentSort.direction === 'asc') {
+        currentSort = { column: null, direction: null };
+      } else {
+        currentSort.direction = 'desc';
+      }
+    } else {
+      if (currentSort.direction === 'asc') {
+        currentSort.direction = 'desc';
+      } else if (currentSort.direction === 'desc') {
+        currentSort = { column: null, direction: null };
+      } else {
+        currentSort.direction = 'asc';
+      }
+    }
+  } else {
+    const isDefaultDesc = (column === 'Score' || column === 'ABV' || column === 'Year');
+    currentSort = { column, direction: isDefaultDesc ? 'desc' : 'asc' };
+  }
+
+  updateSortIndicators();
+  if (currentBaseData.length > 0) {
+    renderTable(getSortedData(currentBaseData));
   }
 }
 
@@ -552,8 +707,9 @@ function handleSearch(queryVal) {
   }
 
   if (!query) {
-    renderTable(rawData); // cite: 1
+    currentBaseData = rawData;
     statusText.innerText = `Showing all ${rawData.length} whiskies.`; // cite: 1
+    renderTable(getSortedData(currentBaseData)); // cite: 1
     return;
   }
 
@@ -563,15 +719,17 @@ function handleSearch(queryVal) {
   const tokens = cleanQuery.split(/\s+/).filter(t => t.length > 0);
 
   if (tokens.length === 0) {
-    renderTable(rawData); // cite: 1
+    currentBaseData = rawData;
+    renderTable(getSortedData(currentBaseData)); // cite: 1
     return;
   }
 
   const escapedTokens = tokens.map(escapeExtendedSearchToken).filter(t => t.length > 0);
 
   if (escapedTokens.length === 0) {
-    renderTable(rawData);
+    currentBaseData = rawData;
     statusText.innerText = `Showing all ${rawData.length} whiskies.`;
+    renderTable(getSortedData(currentBaseData));
     return;
   }
 
@@ -589,6 +747,7 @@ function handleSearch(queryVal) {
 
   const results = fuse.search(extendedQuery); // cite: 1
   const filteredData = results.map(res => res.item); // cite: 1
+  currentBaseData = filteredData;
 
   const avgScore = getAverageScore(filteredData); // cite: 1
   const avgText = avgScore !== null
@@ -596,7 +755,7 @@ function handleSearch(queryVal) {
   : '';
 
   statusText.innerHTML = `Found <span class="text-zinc-100 font-semibold">${escapeHtml(filteredData.length)}</span> matching result(s)${avgText}.`; // cite: 1
-  renderTable(filteredData); // cite: 1
+  renderTable(getSortedData(currentBaseData)); // cite: 1
 }
 
 const debouncedSearch = debounce((e) => {
@@ -661,6 +820,31 @@ scrollToTopBtn.addEventListener('click', () => {
     behavior: 'smooth'
   });
 });
+
+// Table Header sorting
+document.querySelectorAll('th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.getAttribute('data-sort');
+    if (col) setSort(col);
+  });
+});
+
+const mobileSortSelect = document.getElementById('mobileSortSelect');
+if (mobileSortSelect) {
+  mobileSortSelect.addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (!val) {
+      currentSort = { column: null, direction: null };
+    } else {
+      const [col, dir] = val.split('-');
+      currentSort = { column: col, direction: dir };
+    }
+    updateSortIndicators();
+    if (currentBaseData.length > 0) {
+      renderTable(getSortedData(currentBaseData));
+    }
+  });
+}
 
 // Sync quietly, but only when credentials exist (fetchFreshData opens the config modal otherwise)
 function backgroundSync() {

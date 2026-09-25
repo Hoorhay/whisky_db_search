@@ -76,8 +76,22 @@
     </div>
 
     <!-- Status Bar -->
-    <div class="flex items-center justify-between mb-4 px-1.5">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 px-1.5">
       <div id="statusText" class="text-xs sm:text-sm text-zinc-400 font-medium">Checking credentials...</div>
+      <div class="md:hidden flex items-center gap-2 text-xs self-end">
+        <label for="mobileSortSelect" class="text-zinc-500 font-medium">Sort:</label>
+        <select id="mobileSortSelect" class="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-amber-500/60">
+          <option value="">Default (Relevance)</option>
+          <option value="Score-desc">Score (Highest ▼)</option>
+          <option value="Score-asc">Score (Lowest ▲)</option>
+          <option value="ABV-desc">ABV (Highest ▼)</option>
+          <option value="ABV-asc">ABV (Lowest ▲)</option>
+          <option value="Year-desc">Year (Newest ▼)</option>
+          <option value="Year-asc">Year (Oldest ▲)</option>
+          <option value="Name-asc">Name (A–Z ▲)</option>
+          <option value="Name-desc">Name (Z–A ▼)</option>
+        </select>
+      </div>
     </div>
 
     <!-- Results Container -->
@@ -86,11 +100,36 @@
         <table class="w-full text-left text-sm text-zinc-300">
           <thead class="hidden md:table-header-group bg-zinc-900/80 text-zinc-400 uppercase text-[11px] font-semibold tracking-wider border-b border-zinc-800">
             <tr>
-              <th class="px-6 py-4">Name</th>
-              <th class="px-6 py-4">ABV</th>
-              <th class="px-6 py-4">Year</th>
-              <th class="px-6 py-4">Score</th>
-              <th class="px-6 py-4">WB Code</th>
+              <th class="px-6 py-4 cursor-pointer select-none group hover:text-zinc-200 transition-colors" data-sort="Name" scope="col">
+                <div class="flex items-center gap-1.5">
+                  <span>Name</span>
+                  <span class="sort-indicator text-xs font-mono text-zinc-600 transition-colors ml-1 inline-block" data-sort-indicator="Name"></span>
+                </div>
+              </th>
+              <th class="px-6 py-4 cursor-pointer select-none group hover:text-zinc-200 transition-colors" data-sort="ABV" scope="col">
+                <div class="flex items-center gap-1.5">
+                  <span>ABV</span>
+                  <span class="sort-indicator text-xs font-mono text-zinc-600 transition-colors ml-1 inline-block" data-sort-indicator="ABV"></span>
+                </div>
+              </th>
+              <th class="px-6 py-4 cursor-pointer select-none group hover:text-zinc-200 transition-colors" data-sort="Year" scope="col">
+                <div class="flex items-center gap-1.5">
+                  <span>Year</span>
+                  <span class="sort-indicator text-xs font-mono text-zinc-600 transition-colors ml-1 inline-block" data-sort-indicator="Year"></span>
+                </div>
+              </th>
+              <th class="px-6 py-4 cursor-pointer select-none group hover:text-zinc-200 transition-colors" data-sort="Score" scope="col">
+                <div class="flex items-center gap-1.5">
+                  <span>Score</span>
+                  <span class="sort-indicator text-xs font-mono text-zinc-600 transition-colors ml-1 inline-block" data-sort-indicator="Score"></span>
+                </div>
+              </th>
+              <th class="px-6 py-4 cursor-pointer select-none group hover:text-zinc-200 transition-colors" data-sort="WBcode" scope="col">
+                <div class="flex items-center gap-1.5">
+                  <span>WB Code</span>
+                  <span class="sort-indicator text-xs font-mono text-zinc-600 transition-colors ml-1 inline-block" data-sort-indicator="WBcode"></span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody id="resultsBody" class="divide-y divide-zinc-800/60">
