@@ -1,6 +1,6 @@
 // sw.js
 // Bump CACHE_NAME whenever you deploy changes to any cached file.
-const CACHE_NAME = 'whisky-db-v4';
+const CACHE_NAME = 'whisky-db-v5';
 
 // Without these the app can't run at all, so install fails if any are missing.
 const CORE_ASSETS = [
@@ -14,7 +14,6 @@ const CORE_ASSETS = [
 
 // Nice to have: a missing icon must not break offline support.
 const OPTIONAL_ASSETS = [
-  './assets/favicon.svg',
   './assets/favicon-96x96.png',
   './assets/apple-touch-icon.png',
   './assets/web-app-manifest-192x192.png',
