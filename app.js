@@ -529,10 +529,12 @@ function escapeExtendedSearchToken(token) {
   const sanitized = token.replace(/["|]/g, '').trim();
   if (!sanitized) return '';
 
-  // Support '=' prefix as an explicit exact-match operator in Fuse ExtendedSearch (e.g. =55.4 or =50)
+  // Support '=' prefix as an exact substring match (Fuse 'include' operator)
+  // so queries like =Ardbeg match 'Ardbeg 10' exactly without fuzzy typos,
+  // and =55.4 or =50 match exact ABV/Year values.
   if (sanitized.startsWith('=')) {
     const value = sanitized.slice(1).trim();
-    return value ? `="${value}"` : '';
+    return value ? `'"${value}"` : '';
   }
 
   // Wrap standard tokens in quotes so characters like ', !, ^, $ are treated as
