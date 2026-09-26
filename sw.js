@@ -1,23 +1,23 @@
 // sw.js
 // Bump CACHE_NAME whenever you deploy changes to any cached file.
-const CACHE_NAME = 'whisky-db-v7';
+const CACHE_NAME = 'whisky-db-v8';
 
 // Without these the app can't run at all, so install fails if any are missing.
 const CORE_ASSETS = [
   './',
-  './index.html',
-  './style.css',
-  './app.js',
-  './fuse.min.js',
-  './manifest.json'
+'./index.html',
+'./style.css',
+'./app.js',
+'./fuse.min.js',
+'./manifest.json'
 ];
 
 // Nice to have: a missing icon must not break offline support.
 const OPTIONAL_ASSETS = [
   './assets/favicon-96x96.png',
-  './assets/apple-touch-icon.png',
-  './assets/web-app-manifest-192x192.png',
-  './assets/web-app-manifest-512x512.png'
+'./assets/apple-touch-icon.png',
+'./assets/web-app-manifest-192x192.png',
+'./assets/web-app-manifest-512x512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -28,9 +28,9 @@ self.addEventListener('install', (event) => {
     await cache.addAll(CORE_ASSETS.map((url) => new Request(url, { cache: 'reload' })));
 
     await Promise.all(OPTIONAL_ASSETS.map((url) =>
-      cache.add(new Request(url, { cache: 'reload' })).catch((err) => {
-        console.warn('SW: optional asset not cached:', url, err);
-      })
+    cache.add(new Request(url, { cache: 'reload' })).catch((err) => {
+      console.warn('SW: optional asset not cached:', url, err);
+    })
     ));
 
     await self.skipWaiting();
@@ -62,11 +62,11 @@ self.addEventListener('fetch', (event) => {
     const cached = await cache.match(key, { ignoreSearch: true });
 
     const network = fetch(req)
-      .then((res) => {
-        if (res.ok && res.type === 'basic') cache.put(key, res.clone());
-        return res;
-      })
-      .catch(() => null);
+    .then((res) => {
+      if (res.ok && res.type === 'basic') cache.put(key, res.clone());
+      return res;
+    })
+    .catch(() => null);
 
     if (cached) {
       event.waitUntil(network); // let the background refresh finish

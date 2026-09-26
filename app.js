@@ -3,12 +3,16 @@ const STORAGE_KEY_ACCESS_CODE = 'whisky_tracker_access_code';
 // Legacy localStorage cache keys: read once for migration, and used as a fallback if IndexedDB is unavailable
 const LEGACY_KEY_CACHE = 'whisky_tracker_cache_data';
 const LEGACY_KEY_LAST_SYNC = 'whisky_tracker_last_sync';
+const LEGACY_KEY_SYNCED_AT = 'whisky_tracker_synced_at';
 
 const IDB_NAME = 'whisky_db_search';
 const IDB_VERSION = 1;
 const IDB_STORE = 'cache';
 const IDB_RECORD_KEY = 'whiskies';
 const FETCH_TIMEOUT_MS = 10000;
+// Automatic (non-manual) syncs are skipped if the cache is fresher than this.
+// Clicking "Sync DB" always forces a fresh fetch regardless of this.
+const AUTO_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000; // 1 day
 
 let rawData = [];
 let currentBaseData = [];
@@ -81,9 +85,10 @@ async function idbPut(key, value) {
 }
 
 // Data and last-sync time are stored as one record, so they can never get out of step.
-async function saveCache(data, lastSync) {
+// syncedAt is a raw epoch ms timestamp (for age checks); lastSync is the display string.
+async function saveCache(data, lastSync, syncedAt = Date.now()) {
   try {
-    await idbPut(IDB_RECORD_KEY, { data, lastSync });
+    await idbPut(IDB_RECORD_KEY, { data, lastSync, syncedAt });
     try {
       localStorage.removeItem(LEGACY_KEY_CACHE);
       localStorage.removeItem(LEGACY_KEY_LAST_SYNC);
@@ -95,6 +100,7 @@ async function saveCache(data, lastSync) {
   try {
     localStorage.setItem(LEGACY_KEY_CACHE, JSON.stringify(data));
     localStorage.setItem(LEGACY_KEY_LAST_SYNC, lastSync);
+    localStorage.setItem(LEGACY_KEY_SYNCED_AT, String(syncedAt));
   } catch (err) {
     console.warn('Could not cache data locally:', err);
   }
@@ -115,8 +121,13 @@ async function loadCache() {
     if (cached) {
       const data = JSON.parse(cached);
       if (Array.isArray(data) && data.length > 0) {
-        const rec = { data, lastSync: localStorage.getItem(LEGACY_KEY_LAST_SYNC) };
-        await saveCache(rec.data, rec.lastSync); // migrate; clears legacy keys on success
+        const storedSyncedAt = Number(localStorage.getItem(LEGACY_KEY_SYNCED_AT));
+        const rec = {
+          data,
+          lastSync: localStorage.getItem(LEGACY_KEY_LAST_SYNC),
+          syncedAt: Number.isFinite(storedSyncedAt) && storedSyncedAt > 0 ? storedSyncedAt : 0
+        };
+        await saveCache(rec.data, rec.lastSync, rec.syncedAt); // migrate; clears legacy keys on success
         return rec;
       }
     }
@@ -348,7 +359,7 @@ async function fetchFreshData() {
     initSearchAndUI(`Synced now (${nowFormatted}).`);
 
     // saveCache never throws, so a storage failure can't turn a successful sync into an error
-    await saveCache(rawData, nowFormatted);
+    await saveCache(rawData, nowFormatted, now.getTime());
   } catch (err) {
     console.error(err);
     const isOffline = !navigator.onLine || err.name === 'AbortError' || err instanceof TypeError || (err.message && (err.message.includes('Offline') || err.message.includes('503')));
@@ -365,8 +376,8 @@ async function fetchFreshData() {
 
     if (isOffline) {
       statusText.innerText = rawData.length > 0
-        ? "Offline/Network error. Showing cached data."
-        : "Offline. No cached data available.";
+      ? "Offline/Network error. Showing cached data."
+      : "Offline. No cached data available.";
     } else {
       statusText.innerText = `Sync failed: ${err.message}`;
       if (rawData.length === 0) {
@@ -449,8 +460,8 @@ function parseYearNumber(val) {
 
 function parseScoreNumber(item) {
   const scoreVal = item.Score !== undefined && item.Score !== null && item.Score !== ''
-    ? item.Score
-    : (item.AvgScore !== undefined && item.AvgScore !== null && item.AvgScore !== '' ? item.AvgScore : null);
+  ? item.Score
+  : (item.AvgScore !== undefined && item.AvgScore !== null && item.AvgScore !== '' ? item.AvgScore : null);
   if (scoreVal === null) return null;
   const num = parseFloat(String(scoreVal).replace(',', '.').trim());
   return isNaN(num) ? null : num;
@@ -471,8 +482,8 @@ function sortItems(items, column, direction) {
       const nameA = String(a.Name || '').trim();
       const nameB = String(b.Name || '').trim();
       diff = direction === 'asc'
-        ? nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
-        : nameB.localeCompare(nameA, undefined, { sensitivity: 'base', numeric: true });
+      ? nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
+      : nameB.localeCompare(nameA, undefined, { sensitivity: 'base', numeric: true });
     } else if (column === 'ABV') {
       const numA = parseAbvNumber(a.ABV);
       const numB = parseAbvNumber(b.ABV);
@@ -547,8 +558,8 @@ function updateSortIndicators() {
   const mobileSortSelect = document.getElementById('mobileSortSelect');
   if (mobileSortSelect) {
     mobileSortSelect.value = (currentSort.column && currentSort.direction)
-      ? `${currentSort.column}-${currentSort.direction}`
-      : '';
+    ? `${currentSort.column}-${currentSort.direction}`
+    : '';
   }
 }
 
@@ -853,16 +864,25 @@ if (mobileSortSelect) {
 }
 
 // Sync quietly, but only when credentials exist (fetchFreshData opens the config modal otherwise)
-function backgroundSync() {
-  if (navigator.onLine && getEndpointUrl()) fetchFreshData();
+// and only when the cached data is missing or older than AUTO_SYNC_INTERVAL_MS.
+// (The "Sync DB" button calls fetchFreshData directly, so a manual sync always goes through.)
+async function backgroundSync() {
+  if (!navigator.onLine || !getEndpointUrl()) return;
+
+  const rec = await loadCache();
+  const age = rec && rec.syncedAt ? Date.now() - rec.syncedAt : Infinity;
+
+  if (age >= AUTO_SYNC_INTERVAL_MS) {
+    fetchFreshData();
+  }
 }
 
 window.addEventListener('online', backgroundSync);
 
 window.addEventListener('offline', () => {
   statusText.innerText = rawData.length > 0
-    ? "Offline. Displaying cached data."
-    : "Offline. No cached data available.";
+  ? "Offline. Displaying cached data."
+  : "Offline. No cached data available.";
 });
 
 if ('serviceWorker' in navigator) {
