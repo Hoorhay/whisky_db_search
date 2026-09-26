@@ -12,7 +12,7 @@ const IDB_RECORD_KEY = 'whiskies';
 const FETCH_TIMEOUT_MS = 10000;
 // Automatic (non-manual) syncs are skipped if the cache is fresher than this.
 // Clicking "Sync DB" always forces a fresh fetch regardless of this.
-const AUTO_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000; // 1 day
+const AUTO_SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000; // 1 day
 
 let rawData = [];
 let currentBaseData = [];
