@@ -227,17 +227,17 @@ function getScoreColorInfo(scoreVal) {
   if (num >= 95) {
     return { textClass: 'text-[#01d35f]', bgClass: 'bg-[#01d35f]/10' };
   } else if (num >= 90) {
-    return { textClass: 'text-[#93c37d]', bgClass: 'bg-[#93c37d]/10' };
+    return { textClass: 'text-[#62cc4e]', bgClass: 'bg-[#62cc4e]/10' };
   } else if (num >= 85) {
-    return { textClass: 'text-[#ffd965]', bgClass: 'bg-[#ffd965]/10' };
+    return { textClass: 'text-[#abbe37]', bgClass: 'bg-[#abbe37]/10' };
   } else if (num >= 80) {
-    return { textClass: 'text-[#e1b52e]', bgClass: 'bg-[#e1b52e]/10' };
+    return { textClass: 'text-[#e3aa29]', bgClass: 'bg-[#e3aa29]/10' };
   } else if (num >= 70) {
-    return { textClass: 'text-[#ffb74a]', bgClass: 'bg-[#ffb74a]/10' };
+    return { textClass: 'text-[#f38827]', bgClass: 'bg-[#f38827]/10' };
   } else if (num >= 60) {
-    return { textClass: 'text-[#ff7200]', bgClass: 'bg-[#ff7200]/10' };
+    return { textClass: 'text-[#f05d26]', bgClass: 'bg-[#f05d26]/10' };
   } else if (num >= 50) {
-    return { textClass: 'text-[#ff2100]', bgClass: 'bg-[#ff2100]/10' };
+    return { textClass: 'text-[#d8311a]', bgClass: 'bg-[#d8311a]/10' };
   } else {
     return { textClass: 'text-[#c00010]', bgClass: 'bg-[#c00010]/15' };
   }
