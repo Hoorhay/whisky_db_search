@@ -209,12 +209,50 @@ function formatWbList(wbVal) {
   return escapeHtml(codes.join('\n'));
 }
 
+function getScoreColorInfo(scoreVal) {
+  if (scoreVal === undefined || scoreVal === null || scoreVal === '') {
+    return {
+      textClass: 'text-emerald-400',
+      bgClass: 'bg-emerald-500/10'
+    };
+  }
+  const num = typeof scoreVal === 'number' ? scoreVal : parseFloat(String(scoreVal).replace(',', '.').trim());
+  if (isNaN(num)) {
+    return {
+      textClass: 'text-emerald-400',
+      bgClass: 'bg-emerald-500/10'
+    };
+  }
+
+  if (num >= 95) {
+    return { textClass: 'text-[#01d35f]', bgClass: 'bg-[#01d35f]/10' };
+  } else if (num >= 90) {
+    return { textClass: 'text-[#93c37d]', bgClass: 'bg-[#93c37d]/10' };
+  } else if (num >= 85) {
+    return { textClass: 'text-[#ffd965]', bgClass: 'bg-[#ffd965]/10' };
+  } else if (num >= 80) {
+    return { textClass: 'text-[#e1b52e]', bgClass: 'bg-[#e1b52e]/10' };
+  } else if (num >= 70) {
+    return { textClass: 'text-[#ffb74a]', bgClass: 'bg-[#ffb74a]/10' };
+  } else if (num >= 60) {
+    return { textClass: 'text-[#ff7200]', bgClass: 'bg-[#ff7200]/10' };
+  } else if (num >= 50) {
+    return { textClass: 'text-[#ff2100]', bgClass: 'bg-[#ff2100]/10' };
+  } else {
+    return { textClass: 'text-[#c00010]', bgClass: 'bg-[#c00010]/15' };
+  }
+}
+
 function openDetailModal(item) {
   const formattedYear = item.Year
   ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
   : '-';
 
   const wbLink = formatWbLinks(item.WBcode);
+  const displayScore = item.Score !== undefined && item.Score !== null && item.Score !== ''
+    ? item.Score
+    : (item.AvgScore !== undefined && item.AvgScore !== null && item.AvgScore !== '' ? item.AvgScore : null);
+  const scoreColors = getScoreColorInfo(displayScore);
 
   const excludedKeys = ['Name', 'ABV', 'Year', 'Score', 'AvgScore', 'WBcode', 'searchableABV', 'YearStr', 'ScoreStr', 'WBcodeStr', 'id'];
   const preferredOrder = ['Nose', 'Nosa', 'Taste', 'Finish'];
@@ -249,7 +287,7 @@ function openDetailModal(item) {
   </div>
   <div>
   <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Score</span>
-  <span class="text-xl font-bold text-emerald-400">${escapeHtml(String(item.Score || item.AvgScore || '-'))}</span>
+  <span class="text-xl font-bold ${scoreColors.textClass}">${escapeHtml(String(displayScore || '-'))}</span>
   </div>
   </div>
 
@@ -654,7 +692,10 @@ function renderTable(items) {
 
     // Use formatWbLinks instead of formatWbList
     const wbLinks = formatWbLinks(item.WBcode);
-    const displayScore = item.Score !== undefined && item.Score !== null ? item.Score : item.AvgScore;
+    const displayScore = item.Score !== undefined && item.Score !== null && item.Score !== ''
+      ? item.Score
+      : (item.AvgScore !== undefined && item.AvgScore !== null && item.AvgScore !== '' ? item.AvgScore : null);
+    const scoreColors = getScoreColorInfo(displayScore);
     const displayName = escapeHtml(item.Name || '-');
 
     const tr = document.createElement('tr');
@@ -686,7 +727,7 @@ function renderTable(items) {
     <td class="block md:table-cell md:px-6 md:py-4">
     <div class="flex justify-between items-center md:block">
     <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Score</span>
-    <span class="font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded text-xs inline-block">${escapeHtml(String(displayScore || '-'))}</span>
+    <span class="font-bold ${scoreColors.textClass} ${scoreColors.bgClass} px-2 py-0.5 rounded text-xs inline-block">${escapeHtml(String(displayScore || '-'))}</span>
     </div>
     </td>
 
@@ -775,8 +816,9 @@ function handleSearch(queryVal) {
   currentBaseData = filteredData;
 
   const avgScore = getAverageScore(filteredData); // cite: 1
+  const avgColors = avgScore !== null ? getScoreColorInfo(avgScore) : null;
   const avgText = avgScore !== null
-  ? ` with avg score of <span class="font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">${escapeHtml(avgScore)}</span>` // cite: 1
+  ? ` with avg score of <span class="font-bold ${avgColors.textClass} ${avgColors.bgClass} px-1.5 py-0.5 rounded">${escapeHtml(avgScore)}</span>` // cite: 1
   : '';
 
   statusText.innerHTML = `Found <span class="text-zinc-100 font-semibold">${escapeHtml(filteredData.length)}</span> matching result(s)${avgText}.`; // cite: 1
