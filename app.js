@@ -40,6 +40,11 @@ const detailModal = document.getElementById('detailModal');
 const detailContent = document.getElementById('detailContent');
 const detailCloseBtn = document.getElementById('detailCloseBtn');
 
+// Score Guide Modal elements
+const scoreGuideBtn = document.getElementById('scoreGuideBtn');
+const scoreGuideModal = document.getElementById('scoreGuideModal');
+const scoreGuideCloseBtn = document.getElementById('scoreGuideCloseBtn');
+
 // Scroll to Top Button element
 const scrollToTopBtn = document.getElementById('scrollToTopBtn');
 
@@ -269,6 +274,14 @@ function openDetailModal(item) {
 
 function closeDetailModal() {
   detailModal.classList.add('hidden');
+}
+
+function openScoreGuide() {
+  scoreGuideModal.classList.remove('hidden');
+}
+
+function closeScoreGuide() {
+  scoreGuideModal.classList.add('hidden');
 }
 
 function saveCredentialsAndFetch() {
@@ -808,10 +821,12 @@ clearBtn.addEventListener('click', () => {
 
 syncBtn.addEventListener('click', fetchFreshData);
 configBtn.addEventListener('click', openModal);
+scoreGuideBtn.addEventListener('click', openScoreGuide);
 modalCloseBtn.addEventListener('click', closeModal);
 modalCancelBtn.addEventListener('click', closeModal);
 modalSaveBtn.addEventListener('click', saveCredentialsAndFetch);
 detailCloseBtn.addEventListener('click', closeDetailModal);
+scoreGuideCloseBtn.addEventListener('click', closeScoreGuide);
 
 configModal.addEventListener('click', (e) => {
   if (e.target === configModal) closeModal();
@@ -819,6 +834,10 @@ configModal.addEventListener('click', (e) => {
 
 detailModal.addEventListener('click', (e) => {
   if (e.target === detailModal) closeDetailModal();
+});
+
+scoreGuideModal.addEventListener('click', (e) => {
+  if (e.target === scoreGuideModal) closeScoreGuide();
 });
 
 window.addEventListener('scroll', () => {

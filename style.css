@@ -350,6 +350,9 @@
   .w-12 {
     width: calc(var(--spacing) * 12);
   }
+  .w-16 {
+    width: calc(var(--spacing) * 16);
+  }
   .w-full {
     width: 100%;
   }
@@ -364,6 +367,9 @@
   }
   .max-w-md {
     max-width: var(--container-md);
+  }
+  .shrink-0 {
+    flex-shrink: 0;
   }
   .-translate-x-1\/2 {
     --tw-translate-x: calc(calc(1 / 2 * 100%) * -1);
@@ -422,6 +428,11 @@
   }
   .gap-6 {
     gap: calc(var(--spacing) * 6);
+  }
+  :where(.space-y-1\.5 > :not(:last-child)) {
+    --tw-space-y-reverse: 0;
+    margin-block-start: calc(calc(var(--spacing) * 1.5) * var(--tw-space-y-reverse));
+    margin-block-end: calc(calc(var(--spacing) * 1.5) * calc(1 - var(--tw-space-y-reverse)));
   }
   :where(.space-y-2 > :not(:last-child)) {
     --tw-space-y-reverse: 0;
@@ -498,6 +509,30 @@
     border-bottom-style: var(--tw-border-style);
     border-bottom-width: 1px;
   }
+  .border-\[\#01d35f\]\/25 {
+    border-color: color-mix(in oklab, #01d35f 25%, transparent);
+  }
+  .border-\[\#93c37d\]\/25 {
+    border-color: color-mix(in oklab, #93c37d 25%, transparent);
+  }
+  .border-\[\#c00010\]\/30 {
+    border-color: color-mix(in oklab, #c00010 30%, transparent);
+  }
+  .border-\[\#e1b52e\]\/25 {
+    border-color: color-mix(in oklab, #e1b52e 25%, transparent);
+  }
+  .border-\[\#ff2100\]\/25 {
+    border-color: color-mix(in oklab, #ff2100 25%, transparent);
+  }
+  .border-\[\#ff7200\]\/25 {
+    border-color: color-mix(in oklab, #ff7200 25%, transparent);
+  }
+  .border-\[\#ffb74a\]\/25 {
+    border-color: color-mix(in oklab, #ffb74a 25%, transparent);
+  }
+  .border-\[\#ffd965\]\/25 {
+    border-color: color-mix(in oklab, #ffd965 25%, transparent);
+  }
   .border-amber-500\/20 {
     border-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 20%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
@@ -536,6 +571,30 @@
     @supports (color: color-mix(in lab, red, red)) {
       border-color: color-mix(in oklab, var(--color-zinc-800) 80%, transparent);
     }
+  }
+  .bg-\[\#01d35f\]\/10 {
+    background-color: color-mix(in oklab, #01d35f 10%, transparent);
+  }
+  .bg-\[\#93c37d\]\/10 {
+    background-color: color-mix(in oklab, #93c37d 10%, transparent);
+  }
+  .bg-\[\#c00010\]\/15 {
+    background-color: color-mix(in oklab, #c00010 15%, transparent);
+  }
+  .bg-\[\#e1b52e\]\/10 {
+    background-color: color-mix(in oklab, #e1b52e 10%, transparent);
+  }
+  .bg-\[\#ff2100\]\/10 {
+    background-color: color-mix(in oklab, #ff2100 10%, transparent);
+  }
+  .bg-\[\#ff7200\]\/10 {
+    background-color: color-mix(in oklab, #ff7200 10%, transparent);
+  }
+  .bg-\[\#ffb74a\]\/10 {
+    background-color: color-mix(in oklab, #ffb74a 10%, transparent);
+  }
+  .bg-\[\#ffd965\]\/10 {
+    background-color: color-mix(in oklab, #ffd965 10%, transparent);
   }
   .bg-amber-500 {
     background-color: var(--color-amber-500);
@@ -677,6 +736,9 @@
   .py-2 {
     padding-block: calc(var(--spacing) * 2);
   }
+  .py-2\.5 {
+    padding-block: calc(var(--spacing) * 2.5);
+  }
   .py-3\.5 {
     padding-block: calc(var(--spacing) * 3.5);
   }
@@ -789,6 +851,30 @@
   .whitespace-pre-line {
     white-space: pre-line;
   }
+  .text-\[\#01d35f\] {
+    color: #01d35f;
+  }
+  .text-\[\#93c37d\] {
+    color: #93c37d;
+  }
+  .text-\[\#c00010\] {
+    color: #c00010;
+  }
+  .text-\[\#e1b52e\] {
+    color: #e1b52e;
+  }
+  .text-\[\#ff2100\] {
+    color: #ff2100;
+  }
+  .text-\[\#ff7200\] {
+    color: #ff7200;
+  }
+  .text-\[\#ffb74a\] {
+    color: #ffb74a;
+  }
+  .text-\[\#ffd965\] {
+    color: #ffd965;
+  }
   .text-amber-200 {
     color: var(--color-amber-200);
   }
@@ -818,6 +904,9 @@
   }
   .text-zinc-100 {
     color: var(--color-zinc-100);
+  }
+  .text-zinc-200 {
+    color: var(--color-zinc-200);
   }
   .text-zinc-300 {
     color: var(--color-zinc-300);
@@ -1073,6 +1162,9 @@
     .md\:table-row {
       display: table-row;
     }
+    .md\:justify-start {
+      justify-content: flex-start;
+    }
     .md\:p-0 {
       padding: 0px;
     }
@@ -1084,6 +1176,9 @@
     }
     .md\:text-left {
       text-align: left;
+    }
+    .md\:font-sans {
+      font-family: var(--font-sans);
     }
     .md\:text-sm {
       font-size: var(--text-sm);
