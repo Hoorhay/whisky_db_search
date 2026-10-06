@@ -209,38 +209,83 @@ function formatWbList(wbVal) {
   return escapeHtml(codes.join('\n'));
 }
 
-function getScoreColorInfo(scoreVal) {
-  if (scoreVal === undefined || scoreVal === null || scoreVal === '') {
-    return {
-      textClass: 'text-emerald-400',
-      bgClass: 'bg-emerald-500/10'
-    };
+const SCORE_COLOR_STOPS = [
+  { score: 95, r: 1, g: 211, b: 95 },     // #01d35f
+  { score: 90, r: 147, g: 195, b: 125 }, // #93c37d
+  { score: 85, r: 255, g: 217, b: 101 }, // #ffd965
+  { score: 80, r: 225, g: 181, b: 46 },  // #e1b52e
+  { score: 70, r: 255, g: 183, b: 74 },  // #ffb74a
+  { score: 60, r: 255, g: 114, b: 0 },   // #ff7200
+  { score: 50, r: 255, g: 33, b: 0 },    // #ff2100
+  { score: 0,  r: 192, g: 0, b: 16 }     // #c00010
+];
+
+function interpolateScoreRgb(score) {
+  if (score >= 95) return [1, 211, 95];
+  if (score <= 0) return [192, 0, 16];
+  for (let i = 0; i < SCORE_COLOR_STOPS.length - 1; i++) {
+    const high = SCORE_COLOR_STOPS[i];
+    const low = SCORE_COLOR_STOPS[i + 1];
+    if (score >= low.score && score <= high.score) {
+      const t = (score - low.score) / (high.score - low.score);
+      const r = Math.round(low.r + (high.r - low.r) * t);
+      const g = Math.round(low.g + (high.g - low.g) * t);
+      const b = Math.round(low.b + (high.b - low.b) * t);
+      return [r, g, b];
+    }
   }
-  const num = typeof scoreVal === 'number' ? scoreVal : parseFloat(String(scoreVal).replace(',', '.').trim());
-  if (isNaN(num)) {
+  return [1, 211, 95];
+}
+
+function parseScoreValues(scoreVal) {
+  if (scoreVal === undefined || scoreVal === null || scoreVal === '') return [];
+  if (typeof scoreVal === 'number') return isNaN(scoreVal) ? [] : [scoreVal];
+
+  let str = String(scoreVal).trim();
+  if (!str || str === '-') return [];
+
+  // Convert decimal comma to dot when it is a single decimal digit (e.g. "88,5" -> "88.5")
+  str = str.replace(/(\d+),(\d)(?!\d)/g, '$1.$2');
+
+  const parts = str.split(/[,;/\n\s]+/).filter(p => p.length > 0);
+  const nums = [];
+  for (const part of parts) {
+    const val = parseFloat(part.replace(',', '.'));
+    if (!isNaN(val)) {
+      nums.push(val);
+    }
+  }
+  return nums;
+}
+
+function getScoreAverage(scoreVal) {
+  const nums = parseScoreValues(scoreVal);
+  if (nums.length === 0) return null;
+  const sum = nums.reduce((acc, curr) => acc + curr, 0);
+  return sum / nums.length;
+}
+
+function getScoreColorInfo(scoreVal) {
+  const avg = typeof scoreVal === 'number' && !isNaN(scoreVal) ? scoreVal : getScoreAverage(scoreVal);
+  if (avg === null) {
     return {
-      textClass: 'text-emerald-400',
-      bgClass: 'bg-emerald-500/10'
+      styleText: '',
+      styleBadge: '',
+      classText: 'text-emerald-400',
+      classBadge: 'text-emerald-400 bg-emerald-500/10'
     };
   }
 
-  if (num >= 95) {
-    return { textClass: 'text-[#01d35f]', bgClass: 'bg-[#01d35f]/10' };
-  } else if (num >= 90) {
-    return { textClass: 'text-[#62cc4e]', bgClass: 'bg-[#62cc4e]/10' };
-  } else if (num >= 85) {
-    return { textClass: 'text-[#abbe37]', bgClass: 'bg-[#abbe37]/10' };
-  } else if (num >= 80) {
-    return { textClass: 'text-[#e3aa29]', bgClass: 'bg-[#e3aa29]/10' };
-  } else if (num >= 70) {
-    return { textClass: 'text-[#f38827]', bgClass: 'bg-[#f38827]/10' };
-  } else if (num >= 60) {
-    return { textClass: 'text-[#f05d26]', bgClass: 'bg-[#f05d26]/10' };
-  } else if (num >= 50) {
-    return { textClass: 'text-[#d8311a]', bgClass: 'bg-[#d8311a]/10' };
-  } else {
-    return { textClass: 'text-[#c00010]', bgClass: 'bg-[#c00010]/15' };
-  }
+  const [r, g, b] = interpolateScoreRgb(avg);
+  const color = `rgb(${r}, ${g}, ${b})`;
+  const bg = `rgba(${r}, ${g}, ${b}, 0.12)`;
+
+  return {
+    styleText: `color: ${color};`,
+    styleBadge: `color: ${color}; background-color: ${bg};`,
+    classText: '',
+    classBadge: ''
+  };
 }
 
 function openDetailModal(item) {
@@ -287,7 +332,7 @@ function openDetailModal(item) {
   </div>
   <div>
   <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Score</span>
-  <span class="text-xl font-bold ${scoreColors.textClass}">${escapeHtml(String(displayScore || '-'))}</span>
+  <span class="text-xl font-bold ${scoreColors.classText}" style="${scoreColors.styleText}">${escapeHtml(String(displayScore || '-'))}</span>
   </div>
   </div>
 
@@ -514,8 +559,7 @@ function parseScoreNumber(item) {
   ? item.Score
   : (item.AvgScore !== undefined && item.AvgScore !== null && item.AvgScore !== '' ? item.AvgScore : null);
   if (scoreVal === null) return null;
-  const num = parseFloat(String(scoreVal).replace(',', '.').trim());
-  return isNaN(num) ? null : num;
+  return getScoreAverage(scoreVal);
 }
 
 function parseWbNumber(val) {
@@ -647,11 +691,8 @@ function setSort(column) {
 
 function getAverageScore(items) {
   const validScores = items
-  .map(item => {
-    const scoreVal = item.Score !== undefined && item.Score !== null ? item.Score : item.AvgScore;
-    return parseFloat(String(scoreVal || '').replace(',', '.'));
-  })
-  .filter(score => !isNaN(score));
+  .map(item => parseScoreNumber(item))
+  .filter(score => score !== null && !isNaN(score));
 
   if (validScores.length === 0) return null;
 
@@ -727,7 +768,7 @@ function renderTable(items) {
     <td class="block md:table-cell md:px-6 md:py-4">
     <div class="flex justify-between items-center md:block">
     <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Score</span>
-    <span class="font-bold ${scoreColors.textClass} ${scoreColors.bgClass} px-2 py-0.5 rounded text-xs inline-block">${escapeHtml(String(displayScore || '-'))}</span>
+    <span class="font-bold ${scoreColors.classBadge} px-2 py-0.5 rounded text-xs inline-block" style="${scoreColors.styleBadge}">${escapeHtml(String(displayScore || '-'))}</span>
     </div>
     </td>
 
@@ -816,9 +857,9 @@ function handleSearch(queryVal) {
   currentBaseData = filteredData;
 
   const avgScore = getAverageScore(filteredData); // cite: 1
-  const avgColors = avgScore !== null ? getScoreColorInfo(avgScore) : null;
+  const avgColors = avgScore !== null ? getScoreColorInfo(parseFloat(avgScore)) : null;
   const avgText = avgScore !== null
-  ? ` with avg score of <span class="font-bold ${avgColors.textClass} ${avgColors.bgClass} px-1.5 py-0.5 rounded">${escapeHtml(avgScore)}</span>` // cite: 1
+  ? ` with avg score of <span class="font-bold ${avgColors.classBadge} px-1.5 py-0.5 rounded" style="${avgColors.styleBadge}">${escapeHtml(avgScore)}</span>` // cite: 1
   : '';
 
   statusText.innerHTML = `Found <span class="text-zinc-100 font-semibold">${escapeHtml(filteredData.length)}</span> matching result(s)${avgText}.`; // cite: 1

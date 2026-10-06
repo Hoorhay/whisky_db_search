@@ -515,23 +515,23 @@
   .border-\[\#62cc4e\]\/25 {
     border-color: color-mix(in oklab, #62cc4e 25%, transparent);
   }
+  .border-\[\#abbe37\]\/25 {
+    border-color: color-mix(in oklab, #abbe37 25%, transparent);
+  }
   .border-\[\#c00010\]\/30 {
     border-color: color-mix(in oklab, #c00010 30%, transparent);
   }
-  .border-\[\#e3aa29\]\/25 {
-    border-color: color-mix(in oklab, #e3aa29 25%, transparent);
-  }
   .border-\[\#d8311a\]\/25 {
     border-color: color-mix(in oklab, #d8311a 25%, transparent);
+  }
+  .border-\[\#e3aa29\]\/25 {
+    border-color: color-mix(in oklab, #e3aa29 25%, transparent);
   }
   .border-\[\#f05d26\]\/25 {
     border-color: color-mix(in oklab, #f05d26 25%, transparent);
   }
   .border-\[\#f38827\]\/25 {
     border-color: color-mix(in oklab, #f38827 25%, transparent);
-  }
-  .border-\[\#abbe37\]\/25 {
-    border-color: color-mix(in oklab, #abbe37 25%, transparent);
   }
   .border-amber-500\/20 {
     border-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 20%, transparent);
@@ -578,23 +578,23 @@
   .bg-\[\#62cc4e\]\/10 {
     background-color: color-mix(in oklab, #62cc4e 10%, transparent);
   }
+  .bg-\[\#abbe37\]\/10 {
+    background-color: color-mix(in oklab, #abbe37 10%, transparent);
+  }
   .bg-\[\#c00010\]\/15 {
     background-color: color-mix(in oklab, #c00010 15%, transparent);
   }
-  .bg-\[\#e3aa29\]\/10 {
-    background-color: color-mix(in oklab, #e3aa29 10%, transparent);
-  }
   .bg-\[\#d8311a\]\/10 {
     background-color: color-mix(in oklab, #d8311a 10%, transparent);
+  }
+  .bg-\[\#e3aa29\]\/10 {
+    background-color: color-mix(in oklab, #e3aa29 10%, transparent);
   }
   .bg-\[\#f05d26\]\/10 {
     background-color: color-mix(in oklab, #f05d26 10%, transparent);
   }
   .bg-\[\#f38827\]\/10 {
     background-color: color-mix(in oklab, #f38827 10%, transparent);
-  }
-  .bg-\[\#abbe37\]\/10 {
-    background-color: color-mix(in oklab, #abbe37 10%, transparent);
   }
   .bg-amber-500 {
     background-color: var(--color-amber-500);
@@ -857,23 +857,23 @@
   .text-\[\#62cc4e\] {
     color: #62cc4e;
   }
+  .text-\[\#abbe37\] {
+    color: #abbe37;
+  }
   .text-\[\#c00010\] {
     color: #c00010;
   }
-  .text-\[\#e3aa29\] {
-    color: #e3aa29;
-  }
   .text-\[\#d8311a\] {
     color: #d8311a;
+  }
+  .text-\[\#e3aa29\] {
+    color: #e3aa29;
   }
   .text-\[\#f05d26\] {
     color: #f05d26;
   }
   .text-\[\#f38827\] {
     color: #f38827;
-  }
-  .text-\[\#abbe37\] {
-    color: #abbe37;
   }
   .text-amber-200 {
     color: var(--color-amber-200);
