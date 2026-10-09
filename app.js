@@ -210,7 +210,7 @@ function formatWbList(wbVal) {
 }
 
 const SCORE_COLOR_STOPS = [
-  { score: 95, r: 1, g: 211, b: 95 },     // #01d35f
+  { score: 95, r: 1, g: 211, b: 95 },     // #00e967
   { score: 90, r: 147, g: 195, b: 125 }, // #93c37d
   { score: 85, r: 255, g: 217, b: 101 }, // #ffd965
   { score: 80, r: 225, g: 181, b: 46 },  // #e1b52e

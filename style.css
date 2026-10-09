@@ -509,8 +509,8 @@
     border-bottom-style: var(--tw-border-style);
     border-bottom-width: 1px;
   }
-  .border-\[\#01d35f\]\/25 {
-    border-color: color-mix(in oklab, #01d35f 25%, transparent);
+  .border-\[\#00e967\]\/25 {
+    border-color: color-mix(in oklab, #00e967 25%, transparent);
   }
   .border-\[\#62cc4e\]\/25 {
     border-color: color-mix(in oklab, #62cc4e 25%, transparent);
@@ -572,8 +572,8 @@
       border-color: color-mix(in oklab, var(--color-zinc-800) 80%, transparent);
     }
   }
-  .bg-\[\#01d35f\]\/10 {
-    background-color: color-mix(in oklab, #01d35f 10%, transparent);
+  .bg-\[\#00e967\]\/10 {
+    background-color: color-mix(in oklab, #00e967 10%, transparent);
   }
   .bg-\[\#62cc4e\]\/10 {
     background-color: color-mix(in oklab, #62cc4e 10%, transparent);
@@ -851,8 +851,8 @@
   .whitespace-pre-line {
     white-space: pre-line;
   }
-  .text-\[\#01d35f\] {
-    color: #01d35f;
+  .text-\[\#00e967\] {
+    color: #00e967;
   }
   .text-\[\#62cc4e\] {
     color: #62cc4e;
