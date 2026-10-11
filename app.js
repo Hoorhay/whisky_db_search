@@ -787,6 +787,14 @@ function renderTable(items) {
 }
 
 function escapeExtendedSearchToken(token) {
+  // Quoted phrase ("Caol Ila 12" or ="Caol Ila 12"): exact substring match
+  // (Fuse 'include' operator) with the spaces preserved.
+  const quoted = token.match(/^=?"([^"]*)"?$/);
+  if (quoted) {
+    const phrase = quoted[1].replace(/\|/g, '').trim();
+    return phrase ? `'"${phrase}"` : '';
+  }
+
   // Strip double quotes and pipe operators that would alter search grouping/logic.
   const sanitized = token.replace(/["|]/g, '').trim();
   if (!sanitized) return '';
@@ -823,7 +831,9 @@ function handleSearch(queryVal) {
   if (!fuse) return; // cite: 1
 
   const cleanQuery = query.replace(/%/g, '').replace(',', '.');
-  const tokens = cleanQuery.split(/\s+/).filter(t => t.length > 0);
+  // Quote-aware tokenizer: "Caol Ila 12" (or ="Caol Ila 12") stays one token.
+  // An unclosed quote runs to the end of the input so results narrow while typing.
+  const tokens = cleanQuery.match(/=?"[^"]*(?:"|$)|\S+/g) || [];
 
   if (tokens.length === 0) {
     currentBaseData = rawData;
