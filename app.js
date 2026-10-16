@@ -992,13 +992,14 @@ window.addEventListener('offline', () => {
   : "Offline. No cached data available.";
 });
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-    .then(reg => console.log('Service Worker registered!'))
-    .catch(err => console.error('Service Worker registration failed:', err));
-  });
-}
+
+//if ('serviceWorker' in navigator) {
+//  window.addEventListener('load', () => {
+//    navigator.serviceWorker.register('./sw.js')
+//    .then(reg => console.log('Service Worker registered!'))
+//    .catch(err => console.error('Service Worker registration failed:', err));
+//  });
+//}
 
 // Ask the browser not to evict the cached data under storage pressure (best effort)
 if (navigator.storage && navigator.storage.persist) {

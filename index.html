@@ -9,6 +9,14 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="manifest" href="manifest.json">
 
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.error('SW registration failed:', err));
+      }
+  </script>
+
   <!-- Tailwind CSS -->
   <link rel="stylesheet" href="style.css">
   <!-- Fuse.js 7.0.0, vendored locally so search works fully offline (no CDN dependency) -->
