@@ -4,7 +4,7 @@ const CACHE_NAME = 'whisky-db-v16';
 
 // Without these the app can't run at all, so install fails if any are missing.
 const CORE_ASSETS = [
-  './',
+ './',
 './index.html',
 './style.css',
 './app.js',
