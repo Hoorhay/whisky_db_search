@@ -10,10 +10,7 @@ const IDB_VERSION = 1;
 const IDB_STORE = 'cache';
 const IDB_RECORD_KEY = 'whiskies';
 const FETCH_TIMEOUT_MS = 10000;
-// Automatic (non-manual) syncs are skipped if the cache is fresher than this.
-// Clicking "Sync DB" always forces a fresh fetch regardless of this.
-const AUTO_SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000; // 1 day
-
+const AUTO_SYNC_INTERVAL_MS = 12 * 60 * 60 * 1000; // Automatic sync if cache is older than 12 hours
 let rawData = [];
 let currentBaseData = [];
 let currentFilteredData = [];
@@ -299,7 +296,7 @@ function openDetailModal(item) {
     : (item.AvgScore !== undefined && item.AvgScore !== null && item.AvgScore !== '' ? item.AvgScore : null);
   const scoreColors = getScoreColorInfo(displayScore);
 
-  const excludedKeys = ['Name', 'ABV', 'Year', 'Score', 'AvgScore', 'WBcode', 'searchableABV', 'YearStr', 'ScoreStr', 'WBcodeStr', 'id'];
+  const excludedKeys = ['Name', 'ABV', 'Year', 'Score', 'AvgScore', 'WBcode', 'searchableABV', 'YearStr', 'WBcodeStr', 'id'];
   const preferredOrder = ['Nose', 'Nosa', 'Taste', 'Finish'];
 
   const metadataEntries = Object.entries(item)
@@ -509,8 +506,7 @@ function initSearchAndUI(sourceMessage) {
       ...item,
       searchableABV: cleanAbv,
       YearStr: item.Year ? String(item.Year) : '',
-                                     ScoreStr: item.Score || item.AvgScore ? String(item.Score || item.AvgScore) : '',
-                                     WBcodeStr: item.WBcode ? String(item.WBcode) : ''
+      WBcodeStr: item.WBcode ? String(item.WBcode) : ''
     };
   });
 
@@ -856,8 +852,7 @@ function handleSearch(queryVal) {
         { Name: token },
         { YearStr: token },
         { WBcodeStr: token },
-        { searchableABV: token },
-        { ScoreStr: token }
+        { searchableABV: token }
       ]
     }))
   };
