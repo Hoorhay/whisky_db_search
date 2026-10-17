@@ -207,18 +207,18 @@ function formatWbList(wbVal) {
 }
 
 const SCORE_COLOR_STOPS = [
-  { score: 95, r: 1, g: 211, b: 95 },     // #00e967
-  { score: 90, r: 147, g: 195, b: 125 }, // #93c37d
-  { score: 85, r: 255, g: 217, b: 101 }, // #ffd965
-  { score: 80, r: 225, g: 181, b: 46 },  // #e1b52e
-  { score: 70, r: 255, g: 183, b: 74 },  // #ffb74a
-  { score: 60, r: 255, g: 114, b: 0 },   // #ff7200
-  { score: 50, r: 255, g: 33, b: 0 },    // #ff2100
-  { score: 0,  r: 192, g: 0, b: 16 }     // #c00010
+  { score: 95, r: 0,   g: 233, b: 103 }, // #00e967
+  { score: 90, r: 98,  g: 204, b: 78  }, // #62cc4e
+  { score: 85, r: 171, g: 190, b: 55  }, // #abbe37
+  { score: 80, r: 227, g: 170, b: 41  }, // #e3aa29
+  { score: 70, r: 243, g: 136, b: 39  }, // #f38827
+  { score: 60, r: 240, g: 93,  b: 38  }, // #f05d26
+  { score: 50, r: 216, g: 49,  b: 26  }, // #d8311a
+  { score: 0,  r: 192, g: 0,   b: 16  }  // #c00010
 ];
 
 function interpolateScoreRgb(score) {
-  if (score >= 95) return [1, 211, 95];
+  if (score >= 95) return [0, 233, 103];
   if (score <= 0) return [192, 0, 16];
   for (let i = 0; i < SCORE_COLOR_STOPS.length - 1; i++) {
     const high = SCORE_COLOR_STOPS[i];
@@ -231,7 +231,7 @@ function interpolateScoreRgb(score) {
       return [r, g, b];
     }
   }
-  return [1, 211, 95];
+  return [0, 233, 103];
 }
 
 function parseScoreValues(scoreVal) {
