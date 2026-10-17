@@ -1,15 +1,14 @@
 // sw.js
 // Bump CACHE_NAME whenever you deploy changes to any cached file.
-const CACHE_NAME = 'whisky-db-v18';
+const CACHE_NAME = 'whisky-db-v20';
 
 // Without these the app can't run at all, so install fails if any are missing.
 const CORE_ASSETS = [
- './',
-'./index.html',
-'./style.css',
-'./app.js',
-'./fuse.min.js',
-'./manifest.json'
+  './index.html',
+  './style.css',
+  './app.js',
+  './fuse.min.js',
+  './manifest.json'
 ];
 
 // Nice to have: a missing icon must not break offline support.

@@ -26,6 +26,7 @@ const syncBtn = document.getElementById('syncBtn');
 
 // Config Modal elements
 const configModal = document.getElementById('configModal');
+const configForm = document.getElementById('configForm');
 const modalDbUrl = document.getElementById('modalDbUrl');
 const modalAccessCode = document.getElementById('modalAccessCode');
 const modalSaveBtn = document.getElementById('modalSaveBtn');
@@ -160,14 +161,45 @@ function debounce(func, wait) {
   };
 }
 
+let lastFocusedElement = null;
+
+function rememberFocus() {
+  lastFocusedElement = document.activeElement;
+}
+
+function restoreFocus() {
+  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    lastFocusedElement.focus();
+    lastFocusedElement = null;
+  }
+}
+
+function updateBodyScrollLock() {
+  const isAnyModalOpen = !detailModal.classList.contains('hidden') ||
+                         !scoreGuideModal.classList.contains('hidden') ||
+                         !configModal.classList.contains('hidden');
+  if (isAnyModalOpen) {
+    document.body.classList.add('overflow-hidden');
+  } else {
+    document.body.classList.remove('overflow-hidden');
+  }
+}
+
 function openModal() {
+  rememberFocus();
   modalDbUrl.value = localStorage.getItem(STORAGE_KEY_DB_URL) || '';
   modalAccessCode.value = localStorage.getItem(STORAGE_KEY_ACCESS_CODE) || '';
   configModal.classList.remove('hidden');
+  updateBodyScrollLock();
+  setTimeout(() => {
+    (modalDbUrl.value ? modalAccessCode : modalDbUrl).focus();
+  }, 50);
 }
 
 function closeModal() {
   configModal.classList.add('hidden');
+  updateBodyScrollLock();
+  restoreFocus();
 }
 
 function parseWbCodes(wbVal) {
@@ -286,6 +318,7 @@ function getScoreColorInfo(scoreVal) {
 }
 
 function openDetailModal(item) {
+  rememberFocus();
   const formattedYear = item.Year
   ? escapeHtml(String(item.Year).replace(/\r\n|\r/g, '\n'))
   : '-';
@@ -300,7 +333,7 @@ function openDetailModal(item) {
   const preferredOrder = ['Nose', 'Nosa', 'Taste', 'Finish'];
 
   const metadataEntries = Object.entries(item)
-  .filter(([k]) => !excludedKeys.includes(k))
+  .filter(([k, v]) => !excludedKeys.includes(k) && v !== null && v !== undefined && String(v).trim() !== '')
   .sort(([a], [b]) => {
     const indexA = preferredOrder.indexOf(a);
     const indexB = preferredOrder.indexOf(b);
@@ -312,7 +345,7 @@ function openDetailModal(item) {
   });
 
   detailContent.innerHTML = `
-  <h2 class="text-xl font-bold text-amber-400 pr-8 leading-snug">${escapeHtml(item.Name || 'Unknown Whisky')}</h2>
+  <h2 id="detailTitle" class="text-xl font-bold text-amber-400 pr-8 leading-snug">${escapeHtml(item.Name || 'Unknown Whisky')}</h2>
 
   <div class="grid grid-cols-2 gap-3 bg-zinc-950/80 p-4 rounded-xl border border-zinc-800/80">
   <div>
@@ -349,19 +382,32 @@ function openDetailModal(item) {
       ` : ''}
       `;
 
-      detailModal.classList.remove('hidden');
+  detailModal.classList.remove('hidden');
+  updateBodyScrollLock();
+  setTimeout(() => {
+    detailCloseBtn.focus();
+  }, 50);
 }
 
 function closeDetailModal() {
   detailModal.classList.add('hidden');
+  updateBodyScrollLock();
+  restoreFocus();
 }
 
 function openScoreGuide() {
+  rememberFocus();
   scoreGuideModal.classList.remove('hidden');
+  updateBodyScrollLock();
+  setTimeout(() => {
+    scoreGuideCloseBtn.focus();
+  }, 50);
 }
 
 function closeScoreGuide() {
   scoreGuideModal.classList.add('hidden');
+  updateBodyScrollLock();
+  restoreFocus();
 }
 
 function saveCredentialsAndFetch() {
@@ -737,7 +783,10 @@ function renderTable(items) {
 
     const tr = document.createElement('tr');
     tr.setAttribute('data-index', idx);
-    tr.className = "whisky-row block md:table-row hover:bg-zinc-800/40 active:bg-zinc-800/60 transition-colors cursor-pointer border-b border-zinc-800/60 last:border-none p-4 md:p-0";
+    tr.setAttribute('tabindex', '0');
+    tr.setAttribute('role', 'button');
+    tr.setAttribute('aria-label', `View details for ${item.Name || 'Unknown Whisky'}`);
+    tr.className = "whisky-row block md:table-row hover:bg-zinc-800/40 active:bg-zinc-800/60 focus:outline-none focus:bg-zinc-800/60 focus:ring-1 focus:ring-amber-500/40 transition-colors cursor-pointer border-b border-zinc-800/60 last:border-none p-4 md:p-0";
 
     tr.innerHTML = `
     <td class="block md:table-cell md:px-6 md:py-4">
@@ -898,6 +947,19 @@ resultsBody.addEventListener('click', (e) => {
   }
 });
 
+resultsBody.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const row = e.target.closest('.whisky-row');
+    if (row && (e.target === row || !e.target.closest('a'))) {
+      e.preventDefault();
+      const index = parseInt(row.getAttribute('data-index'), 10);
+      if (!isNaN(index) && currentFilteredData[index]) {
+        openDetailModal(currentFilteredData[index]);
+      }
+    }
+  }
+});
+
 searchInput.addEventListener('input', debouncedSearch);
 
 clearBtn.addEventListener('click', () => {
@@ -912,9 +974,30 @@ configBtn.addEventListener('click', openModal);
 scoreGuideBtn.addEventListener('click', openScoreGuide);
 modalCloseBtn.addEventListener('click', closeModal);
 modalCancelBtn.addEventListener('click', closeModal);
-modalSaveBtn.addEventListener('click', saveCredentialsAndFetch);
+
+if (configForm) {
+  configForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveCredentialsAndFetch();
+  });
+} else if (modalSaveBtn) {
+  modalSaveBtn.addEventListener('click', saveCredentialsAndFetch);
+}
+
 detailCloseBtn.addEventListener('click', closeDetailModal);
 scoreGuideCloseBtn.addEventListener('click', closeScoreGuide);
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (!detailModal.classList.contains('hidden')) {
+      closeDetailModal();
+    } else if (!scoreGuideModal.classList.contains('hidden')) {
+      closeScoreGuide();
+    } else if (!configModal.classList.contains('hidden')) {
+      closeModal();
+    }
+  }
+});
 
 configModal.addEventListener('click', (e) => {
   if (e.target === configModal) closeModal();
@@ -950,6 +1033,13 @@ document.querySelectorAll('th[data-sort]').forEach(th => {
   th.addEventListener('click', () => {
     const col = th.getAttribute('data-sort');
     if (col) setSort(col);
+  });
+  th.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      const col = th.getAttribute('data-sort');
+      if (col) setSort(col);
+    }
   });
 });
 
@@ -991,15 +1081,6 @@ window.addEventListener('offline', () => {
   ? "Offline. Displaying cached data."
   : "Offline. No cached data available.";
 });
-
-
-//if ('serviceWorker' in navigator) {
-//  window.addEventListener('load', () => {
-//    navigator.serviceWorker.register('./sw.js')
-//    .then(reg => console.log('Service Worker registered!'))
-//    .catch(err => console.error('Service Worker registration failed:', err));
-//  });
-//}
 
 // Ask the browser not to evict the cached data under storage pressure (best effort)
 if (navigator.storage && navigator.storage.persist) {
