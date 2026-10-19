@@ -283,7 +283,7 @@ function parseScoreValues(scoreVal) {
   if (typeof scoreVal === 'number') return isNaN(scoreVal) ? [] : [scoreVal];
 
   let str = String(scoreVal).trim();
-  if (!str || str === '-') return [];
+  if (!str || str === '—') return [];
 
   // Convert decimal comma to dot when it is a single decimal digit (e.g. "88,5" -> "88.5")
   str = str.replace(/(\d+),(\d)(?!\d)/g, '$1.$2');
@@ -374,7 +374,7 @@ function openDetailModal(item) {
   </div>
   <div>
   <span class="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-0.5">Score</span>
-  <span class="text-xl font-bold ${scoreColors.classText}" style="${scoreColors.styleText}">${escapeHtml(String(displayScore || '-'))}</span>
+  <span class="text-xl font-bold ${scoreColors.classText}" style="${scoreColors.styleText}">${escapeHtml(String(displayScore || '—'))}</span>
   </div>
   </div>
 
@@ -842,7 +842,7 @@ function renderTable(items) {
     <td class="block md:table-cell md:px-6 md:py-4">
     <div class="flex justify-between items-center md:block">
     <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Score</span>
-    <span class="font-bold ${scoreColors.classBadge} px-2 py-0.5 rounded text-xs inline-block" style="${scoreColors.styleBadge}">${escapeHtml(String(displayScore || '-'))}</span>
+    <span class="font-bold ${scoreColors.classBadge} px-2 py-0.5 rounded text-xs inline-block" style="${scoreColors.styleBadge}">${escapeHtml(String(displayScore || '—'))}</span>
     </div>
     </td>
 
