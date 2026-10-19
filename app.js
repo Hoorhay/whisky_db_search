@@ -16,6 +16,7 @@ let currentBaseData = [];
 let currentFilteredData = [];
 let currentSort = { column: null, direction: null };
 let fuse = null;
+let isFetching = false;
 
 const searchInput = document.getElementById('searchInput');
 const clearBtn = document.getElementById('clearBtn');
@@ -29,6 +30,9 @@ const configModal = document.getElementById('configModal');
 const configForm = document.getElementById('configForm');
 const modalDbUrl = document.getElementById('modalDbUrl');
 const modalAccessCode = document.getElementById('modalAccessCode');
+const toggleAccessCodeBtn = document.getElementById('toggleAccessCodeBtn');
+const eyeIcon = document.getElementById('eyeIcon');
+const eyeOffIcon = document.getElementById('eyeOffIcon');
 const modalSaveBtn = document.getElementById('modalSaveBtn');
 const modalCancelBtn = document.getElementById('modalCancelBtn');
 const modalCloseBtn = document.getElementById('modalCloseBtn');
@@ -95,6 +99,7 @@ async function saveCache(data, lastSync, syncedAt = Date.now()) {
     try {
       localStorage.removeItem(LEGACY_KEY_CACHE);
       localStorage.removeItem(LEGACY_KEY_LAST_SYNC);
+      localStorage.removeItem(LEGACY_KEY_SYNCED_AT);
     } catch (e) { /* ignore */ }
     return;
   } catch (err) {
@@ -185,8 +190,20 @@ function updateBodyScrollLock() {
   }
 }
 
+function setAccessCodeVisibility(show) {
+  if (!modalAccessCode) return;
+  modalAccessCode.type = show ? 'text' : 'password';
+  if (eyeIcon) eyeIcon.classList.toggle('hidden', show);
+  if (eyeOffIcon) eyeOffIcon.classList.toggle('hidden', !show);
+  if (toggleAccessCodeBtn) {
+    toggleAccessCodeBtn.setAttribute('title', show ? 'Hide access code' : 'Show access code');
+    toggleAccessCodeBtn.setAttribute('aria-label', show ? 'Hide access code' : 'Show access code');
+  }
+}
+
 function openModal() {
   rememberFocus();
+  setAccessCodeVisibility(false);
   modalDbUrl.value = localStorage.getItem(STORAGE_KEY_DB_URL) || '';
   modalAccessCode.value = localStorage.getItem(STORAGE_KEY_ACCESS_CODE) || '';
   configModal.classList.remove('hidden');
@@ -197,6 +214,7 @@ function openModal() {
 }
 
 function closeModal() {
+  setAccessCodeVisibility(false);
   configModal.classList.add('hidden');
   updateBodyScrollLock();
   restoreFocus();
@@ -230,12 +248,6 @@ function formatWbLinks(wbVal) {
     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
     </a>`;
   }).join(' ');
-}
-
-function formatWbList(wbVal) {
-  const codes = parseWbCodes(wbVal);
-  if (codes.length === 0) return '-';
-  return escapeHtml(codes.join('\n'));
 }
 
 const SCORE_COLOR_STOPS = [
@@ -300,8 +312,8 @@ function getScoreColorInfo(scoreVal) {
     return {
       styleText: '',
       styleBadge: '',
-      classText: 'text-emerald-400',
-      classBadge: 'text-emerald-400 bg-emerald-500/10'
+      classText: 'text-zinc-500',
+      classBadge: 'text-zinc-400 bg-zinc-800/60 border border-zinc-700/40'
     };
   }
 
@@ -368,13 +380,13 @@ function openDetailModal(item) {
 
   ${metadataEntries.length > 0 ? `
     <div class="border-t border-zinc-800/80 pt-3 space-y-2.5">
-    <h3 class="text-s uppercase tracking-wider text-zinc-400 font-bold">Details & Notes</h3>
-    <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+    <h3 class="text-xs uppercase tracking-wider text-zinc-400 font-bold">Details & Notes</h3>
+    <div class="space-y-2 max-h-72 sm:max-h-96 overflow-y-auto pr-1">
     ${metadataEntries
       .map(([k, v]) => `
       <div class="text-xs bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-800/50">
       <span class="text-amber-500/80 font-medium block mb-0.5">${escapeHtml(k)}</span>
-      <span class="text-zinc-300">${escapeHtml(String(v))}</span>
+      <span class="text-zinc-300 whitespace-pre-line leading-relaxed">${escapeHtml(String(v))}</span>
       </div>`)
       .join('')}
       </div>
@@ -436,6 +448,8 @@ function getEndpointUrl() {
 }
 
 async function fetchFreshData() {
+  if (isFetching) return;
+
   if (!navigator.onLine) {
     statusText.innerText = "Offline. Displaying cached data.";
     return;
@@ -448,6 +462,14 @@ async function fetchFreshData() {
     resultsBody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-amber-400 font-medium">Configuration required to fetch data.</td></tr>`; // cite: 1
     openModal(); // cite: 1
     return; // cite: 1
+  }
+
+  isFetching = true;
+  const syncIcon = syncBtn ? syncBtn.querySelector('svg') : null;
+  if (syncBtn) {
+    syncBtn.disabled = true;
+    syncBtn.classList.add('opacity-70', 'cursor-not-allowed');
+    if (syncIcon) syncIcon.classList.add('animate-spin');
   }
 
   statusText.innerText = "Syncing with Firebase...";
@@ -525,6 +547,13 @@ async function fetchFreshData() {
     }
   } finally {
     clearTimeout(timer);
+    isFetching = false;
+    if (syncBtn) {
+      syncBtn.disabled = false;
+      syncBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+      const syncIcon = syncBtn.querySelector('svg');
+      if (syncIcon) syncIcon.classList.remove('animate-spin');
+    }
   }
 }
 
@@ -857,14 +886,19 @@ function escapeExtendedSearchToken(token) {
   return `"${sanitized}"`;
 }
 
+function updateClearButton() {
+  if (searchInput && clearBtn) {
+    if (searchInput.value.trim().length > 0) {
+      clearBtn.classList.remove('hidden');
+    } else {
+      clearBtn.classList.add('hidden');
+    }
+  }
+}
+
 function handleSearch(queryVal) {
   const query = queryVal.trim();
-
-  if (query.length > 0) {
-    clearBtn.classList.remove('hidden'); // cite: 1
-  } else {
-    clearBtn.classList.add('hidden'); // cite: 1
-  }
+  updateClearButton();
 
   if (!query) {
     currentBaseData = rawData;
@@ -927,7 +961,7 @@ const debouncedSearch = debounce((e) => {
 // Event Listeners
 searchInput.addEventListener('search', (e) => {
   if (e.target.value === '') {
-    clearBtn.classList.add('hidden');
+    updateClearButton();
     handleSearch('');
   }
 });
@@ -960,11 +994,14 @@ resultsBody.addEventListener('keydown', (e) => {
   }
 });
 
-searchInput.addEventListener('input', debouncedSearch);
+searchInput.addEventListener('input', (e) => {
+  updateClearButton();
+  debouncedSearch(e);
+});
 
 clearBtn.addEventListener('click', () => {
   searchInput.value = '';
-  clearBtn.classList.add('hidden');
+  updateClearButton();
   searchInput.focus();
   handleSearch('');
 });
@@ -974,6 +1011,12 @@ configBtn.addEventListener('click', openModal);
 scoreGuideBtn.addEventListener('click', openScoreGuide);
 modalCloseBtn.addEventListener('click', closeModal);
 modalCancelBtn.addEventListener('click', closeModal);
+
+if (toggleAccessCodeBtn && modalAccessCode) {
+  toggleAccessCodeBtn.addEventListener('click', () => {
+    setAccessCodeVisibility(modalAccessCode.type === 'password');
+  });
+}
 
 if (configForm) {
   configForm.addEventListener('submit', (e) => {
