@@ -781,6 +781,24 @@ function formatAbv(val) {
   return `${percentage.toFixed(1)}%`;
 }
 
+// Groups multiple scores into lines of up to 3 ("88, 90, 92," then the next line),
+// keeping the trailing comma on every line except the last.
+function formatScoreLines(scoreVal, perLine = 3) {
+  if (scoreVal === undefined || scoreVal === null || scoreVal === '') return '—';
+  if (typeof scoreVal === 'number') return escapeHtml(String(scoreVal));
+
+  // Protect decimal commas ("88,5" -> "88.5") before splitting on separators
+  const str = String(scoreVal).trim().replace(/(\d+),(\d)(?!\d)/g, '$1.$2');
+  const tokens = str.split(/[,;\n\s]+/).filter(t => t.length > 0);
+  if (tokens.length <= perLine) return escapeHtml(tokens.length ? tokens.join(', ') : '—');
+
+  const lines = [];
+  for (let i = 0; i < tokens.length; i += perLine) {
+    lines.push(tokens.slice(i, i + perLine).join(', '));
+  }
+  return lines.map(escapeHtml).join(',<br>');
+}
+
 function renderTable(items) {
   currentFilteredData = items;
   resultsBody.textContent = '';
@@ -842,7 +860,7 @@ function renderTable(items) {
     <td class="block md:table-cell md:px-6 md:py-4">
     <div class="flex justify-between items-center md:block">
     <span class="text-xs font-semibold uppercase tracking-wider text-zinc-500 md:hidden">Score</span>
-    <span class="font-bold ${scoreColors.classBadge} px-2 py-0.5 rounded text-xs inline-block" style="${scoreColors.styleBadge}">${escapeHtml(String(displayScore || '—'))}</span>
+    <span class="font-bold ${scoreColors.classBadge} px-2 py-0.5 rounded text-xs inline-block whitespace-nowrap" style="${scoreColors.styleBadge}">${formatScoreLines(displayScore)}</span>
     </div>
     </td>
 
