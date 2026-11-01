@@ -1143,10 +1143,26 @@ window.addEventListener('offline', () => {
   : "Offline. No cached data available.";
 });
 
-// Ask the browser not to evict the cached data under storage pressure (best effort)
-if (navigator.storage && navigator.storage.persist) {
-  navigator.storage.persist().catch(() => {});
+async function requestPersistence() {
+  if (navigator.storage && navigator.storage.persisted && navigator.storage.persist) {
+    try {
+      const isPersisted = await navigator.storage.persisted();
+      if (!isPersisted) {
+        const granted = await navigator.storage.persist();
+        if (granted) {
+          console.log("Persistent storage granted by the browser.");
+        } else {
+          console.warn("Persistent storage was denied by the browser.");
+        }
+      } else {
+        console.log("Persistent storage was already granted.");
+      }
+    } catch (err) {
+      console.warn("Error checking/requesting persistence:", err);
+    }
+  }
 }
 
-// Show cached data first, then refresh in the background
+// Request persistence on startup, then load local cache and sync
+requestPersistence();
 loadData().catch(console.error).then(backgroundSync);
