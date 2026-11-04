@@ -47,6 +47,12 @@ const scoreGuideBtn = document.getElementById('scoreGuideBtn');
 const scoreGuideModal = document.getElementById('scoreGuideModal');
 const scoreGuideCloseBtn = document.getElementById('scoreGuideCloseBtn');
 
+// SMWS Modal elements
+const smwsBtn = document.getElementById('smwsBtn');
+const smwsModal = document.getElementById('smwsModal');
+const smwsCloseBtn = document.getElementById('smwsCloseBtn');
+const smwsSearch = document.getElementById('smwsSearch');
+
 // Scroll to Top Button element
 const scrollToTopBtn = document.getElementById('scrollToTopBtn');
 
@@ -182,6 +188,7 @@ function restoreFocus() {
 function updateBodyScrollLock() {
   const isAnyModalOpen = !detailModal.classList.contains('hidden') ||
                          !scoreGuideModal.classList.contains('hidden') ||
+                         !smwsModal.classList.contains('hidden') ||
                          !configModal.classList.contains('hidden');
   if (isAnyModalOpen) {
     document.body.classList.add('overflow-hidden');
@@ -420,6 +427,32 @@ function closeScoreGuide() {
   scoreGuideModal.classList.add('hidden');
   updateBodyScrollLock();
   restoreFocus();
+}
+
+function openSmwsModal() {
+  rememberFocus();
+  smwsModal.classList.remove('hidden');
+  updateBodyScrollLock();
+  if (smwsSearch) smwsSearch.value = '';
+  filterSmwsRows('');
+  setTimeout(() => {
+    smwsCloseBtn.focus();
+  }, 50);
+}
+
+function closeSmwsModal() {
+  smwsModal.classList.add('hidden');
+  updateBodyScrollLock();
+  restoreFocus();
+}
+
+function filterSmwsRows(query) {
+  const q = query.trim().toLowerCase();
+  document.querySelectorAll('.smws-row').forEach(row => {
+    const name = (row.dataset.name || '').toLowerCase();
+    const code = (row.querySelector('span')?.textContent || '').toLowerCase();
+    row.style.display = (!q || name.includes(q) || code.includes(q)) ? '' : 'none';
+  });
 }
 
 function saveCredentialsAndFetch() {
@@ -1027,6 +1060,7 @@ clearBtn.addEventListener('click', () => {
 syncBtn.addEventListener('click', fetchFreshData);
 configBtn.addEventListener('click', openModal);
 scoreGuideBtn.addEventListener('click', openScoreGuide);
+smwsBtn.addEventListener('click', openSmwsModal);
 modalCloseBtn.addEventListener('click', closeModal);
 modalCancelBtn.addEventListener('click', closeModal);
 
@@ -1047,6 +1081,11 @@ if (configForm) {
 
 detailCloseBtn.addEventListener('click', closeDetailModal);
 scoreGuideCloseBtn.addEventListener('click', closeScoreGuide);
+smwsCloseBtn.addEventListener('click', closeSmwsModal);
+
+if (smwsSearch) {
+  smwsSearch.addEventListener('input', () => filterSmwsRows(smwsSearch.value));
+}
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -1054,6 +1093,8 @@ window.addEventListener('keydown', (e) => {
       closeDetailModal();
     } else if (!scoreGuideModal.classList.contains('hidden')) {
       closeScoreGuide();
+    } else if (!smwsModal.classList.contains('hidden')) {
+      closeSmwsModal();
     } else if (!configModal.classList.contains('hidden')) {
       closeModal();
     }
@@ -1070,6 +1111,10 @@ detailModal.addEventListener('click', (e) => {
 
 scoreGuideModal.addEventListener('click', (e) => {
   if (e.target === scoreGuideModal) closeScoreGuide();
+});
+
+smwsModal.addEventListener('click', (e) => {
+  if (e.target === smwsModal) closeSmwsModal();
 });
 
 window.addEventListener('scroll', () => {
