@@ -1163,6 +1163,5 @@ async function requestPersistence() {
   }
 }
 
-// Request persistence on startup, then load local cache and sync
 requestPersistence();
 loadData().catch(console.error).then(backgroundSync);
